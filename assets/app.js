@@ -68,7 +68,7 @@
   $("#login").addEventListener("submit", function (ev) {
     ev.preventDefault();
     $("#err").textContent = ""; $("#go").disabled = true; $("#go").textContent = "Vérification…";
-    login($("#email").value, $("#pw").value).then(start).catch(function () { $("#err").textContent = "Adresse ou mot de passe incorrect."; })
+    login("", $("#pw").value.trim()).then(start).catch(function () { $("#err").textContent = "Code incorrect."; })
       .then(function () { $("#go").disabled = false; $("#go").textContent = "Ouvrir"; });
   });
   $("#logout").addEventListener("click", function () { sessionStorage.removeItem("pk"); location.hash = ""; location.reload(); });
