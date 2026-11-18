@@ -211,3 +211,4 @@ code{background:var(--soft);padding:0 4px}
 .card.r-complete{border-left-color:var(--blue)} .card.r-corrige{border-left-color:var(--gold)} .card.r-nouveau{border-left-color:var(--sol)}
 .box.ajout{border-color:rgba(242,184,75,.45)} .box.ajout h4{color:var(--gold)}
 [data-s][hidden]{display:none!important}
+.tabs[hidden],.gq[hidden]{display:none!important}
