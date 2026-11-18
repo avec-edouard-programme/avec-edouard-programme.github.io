@@ -24,6 +24,7 @@
     if (list) out.push("<ul>" + list.join("") + "</ul>");
     return out.join("");
   };
+  var mt = function (txt, q) { if (!q) return true; var re = new RegExp("(^|[^a-z0-9])" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); return re.test(txt); };
   var norm = function (s) { return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
   var b64d = function (s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
   var b64e = function (u) { var s = ""; u = new Uint8Array(u); for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); };
@@ -89,6 +90,19 @@
     var P = C.philippe, A = C.adversaires, anal = P.analyses, AT = C.attaques, ECH = C.echeances || [];
     var advById = {}; A.forEach(function (a) { advById[a.id] = a; });
     var RIV = AT ? AT.rivaux : [];
+    var CONTACT = (C.config || {}).contact, VER = {}, AJN = {};
+    var ds = function (txt) { return ' data-s="' + esc(norm(txt)) + '"'; };
+    var corr = function (ref, title) {
+      if (!CONTACT) return "";
+      var s = "[Programmes 2027] Correction : " + ref + " " + String(title || "").slice(0, 80);
+      var b = "Élément concerné : " + ref + "\n\nCe qui est à corriger :\n\nSource (lien, page) :\n";
+      return '<a class="corr" href="mailto:' + esc(CONTACT) + "?subject=" + encodeURIComponent(s) + "&body=" + encodeURIComponent(b) + '">Signaler une correction</a>';
+    };
+    var SLAB = { modifie: "Modifiée depuis le site", precise: "Précisée", nouveau: "Nouvelle (volume 1)", retire: "Retirée" };
+    var RLAB = { "complète": "Complète", "corrige": "Corrige", "nouveau": "Proposition nouvelle" };
+    var rkey = function (r) { return norm(r).replace(/[^a-z]/g, ""); };
+    if (C.versions) C.versions.changements.forEach(function (v) { if (v.num != null) (VER[v.num] = VER[v.num] || []).push(v); });
+    if (C.ajouts) C.ajouts.ajouts.forEach(function (a) { (a.mesures || []).forEach(function (n) { (AJN[n] = AJN[n] || []).push(a); }); });
     var blocOf = function (id) { return (RIV.filter(function (r) { return r.id === id; })[0] || {}).bloc || ""; };
 
     // scores
@@ -102,7 +116,7 @@
       var at = AT && AT.mesures[m.num];
       m._att = at || null; m._expo = 0; m._top = null;
       if (at) RIV.forEach(function (r) { var s = attScore(at[r.id]); if (s > m._expo) { m._expo = s; m._top = r.id; } });
-      m._txt = norm("n°" + m.num + " " + m.titre + " " + (m.texte || "") + " " + m.section + " " + m.analyses.join(" "));
+      m._txt = norm("n°" + m.num + " " + m.titre + " " + (m.texte || "") + " " + m.section + " " + m.analyses.join(" ") + " " + (AJN[m.num] || []).map(function (a) { return a.titre; }).join(" "));
     });
     var analysed = P.mesures.filter(function (m) { return m.analyses.length; });
     var vc = {}; P.mesures.forEach(function (m) { m._v.forEach(function (v) { vc[v] = (vc[v] || 0) + 1; }); });
@@ -114,9 +128,9 @@
     };
 
     // ---------- navigation numérotée
-    var SECS = [["synthese", "Vue d'ensemble"], ["philippe", "Programme Philippe"], ["attaques", "Attaques probables"], ["questions", "Questions à l'équipe"], ["adversaires", "Adversaires"], ["comparer", "Comparer"], ["echeances", "Échéances"], ["calendrier", "Calendrier"], ["methode", "Méthode"]];
+    var SECS = [["synthese", "Vue d'ensemble"], ["philippe", "Programme Philippe"], ["versions", "Ce qui a changé"], ["ajouts", "Nos ajouts"], ["attaques", "Attaques probables"], ["questions", "Questions à l'équipe"], ["adversaires", "Adversaires"], ["comparer", "Comparer"], ["echeances", "Échéances"], ["calendrier", "Calendrier"], ["methode", "Méthode"]];
     var nn = function (i) { return (i < 9 ? "0" : "") + (i + 1); };
-    $("#tabs").innerHTML = SECS.map(function (s, i) { return '<button class="tab" role="tab" id="t-' + s[0] + '" aria-controls="p-' + s[0] + '" aria-selected="' + (i === 0) + '"><span>' + nn(i) + "</span>" + s[1] + "</button>"; }).join("");
+    $("#tabs").innerHTML = SECS.map(function (s, i) { return '<button class="tab" role="tab" id="t-' + s[0] + '" aria-controls="p-' + s[0] + '" aria-selected="' + (i === 0) + '"><span>' + nn(i) + "</span>" + s[1] + '<em class="hits" hidden></em></button>'; }).join("");
     app.innerHTML = SECS.map(function (s, i) { return '<section class="panel sec" role="tabpanel" id="p-' + s[0] + '"' + (i ? " hidden" : "") + "></section>"; }).join("");
     var openTab = function (id) {
       $$(".tab").forEach(function (t) { var on = t.id === "t-" + id; t.setAttribute("aria-selected", on); $("#p-" + t.id.slice(2)).hidden = !on; });
@@ -177,7 +191,7 @@
     };
     function card(m) {
       var h = '<article class="card v-' + m._v[0] + '" id="m' + m.num + '">';
-      h += '<div class="card-h"><span class="num">N°' + m.num + "</span><span>" + esc(m.section) + " · p. " + esc(m.page) + "</span>" + m._v.map(function (v) { return badge(v); }).join("") + (m._expo >= 50 ? '<span class="badge" style="color:var(--red)">Exposée ' + m._expo + "</span>" : "") + "</div>";
+      h += '<div class="card-h"><span class="num">N°' + m.num + "</span><span>" + esc(m.section) + " · p. " + esc(m.page) + "</span>" + m._v.map(function (v) { return badge(v); }).join("") + (m._expo >= 50 ? '<span class="badge" style="color:var(--red)">Exposée ' + m._expo + "</span>" : "") + (VER[m.num] || []).map(function (v) { return badge(v.statut, SLAB[v.statut]); }).join("") + "</div>";
       h += '<div class="titre">' + esc(m.titre) + "</div>" + (m.texte ? '<p class="texte">' + esc(m.texte) + "</p>" : "");
       var pp = sectionPP(m.section); if (pp) h += '<p class="pp">' + esc(pp) + "</p>";
       m.analyses.forEach(function (t) {
@@ -190,12 +204,14 @@
         var a = anal[e.analyse] || anal[m.analyses[0]], piste = a ? ((a.fiche || a.detail).match(PISTE) || [])[0] : null;
         h += '<div class="box change"><h4>Ce qui pourrait changer</h4>' + (piste ? "<p>" + inline(piste) + "</p>" : "") + "<h4>Élément de langage proposé</h4>" + md(e.edl) + (e.pourquoi ? '<p class="pp">' + inline(e.pourquoi) + "</p>" : "") + '<p class="pp">' + esc(m.edl_propose.source) + "</p></div>";
       });
-      h += attRows(m);
+      if (AJN[m.num]) h += '<div class="box ajout"><h4>Ce que nos travaux ajoutent</h4><ul>' + AJN[m.num].map(function (a) { return "<li><strong>" + esc(a.titre) + "</strong> " + esc(String(a.texte).replace(/[¹²³⁴⁵⁶⁷⁸⁹⁰]+/g, "")) + ' <span class="pp">(' + esc(a.groupe) + ", " + esc(RLAB[a.relation] || a.relation) + ")</span></li>"; }).join("") + "</ul></div>";
+      (VER[m.num] || []).forEach(function (v) { if (v.avant) h += '<details class="box more"><summary>Ce qui a changé depuis le site (' + esc(SLAB[v.statut]) + ')</summary><div class="vcmp"><div class="av"><h4>Avant</h4>' + esc(v.avant) + '<p class="pp">' + esc(v.avant_source) + '</p></div><div class="ap"><h4>Livret</h4>' + esc(v.apres) + "</div></div>" + (v.note ? '<p class="pp">' + esc(v.note) + "</p>" : "") + "</details>"; });
+      h += attRows(m) + corr("N°" + m.num, m.titre);
       return h + "</article>";
     }
     function renderP() {
       $$("#p-philippe .chip").forEach(function (b) { b.setAttribute("aria-pressed", st[b._k] === b._v); });
-      var list = P.mesures.filter(function (m) { return (!st.onlyA || m.analyses.length) && (!st.sec || m.section === st.sec) && (!st.v || m._v.indexOf(st.v) >= 0) && (!st.q || m._txt.indexOf(st.q) >= 0); });
+      var list = P.mesures.filter(function (m) { return (!st.onlyA || m.analyses.length) && (!st.sec || m.section === st.sec) && (!st.v || m._v.indexOf(st.v) >= 0) && mt(m._txt, st.q); });
       $("#count").textContent = list.length + " mesure" + (list.length > 1 ? "s" : "");
       $("#cards").innerHTML = list.map(card).join("") || '<p class="empty">Aucune mesure ne correspond.</p>';
     }
@@ -224,14 +240,14 @@
       svg += "</svg>";
       var sorted = analysed.slice().sort(function (a, b) { return b._expo - a._expo || (a._sol || 0) - (b._sol || 0); });
       var cell = function (m, r) { var c = m._att && m._att[r.id], s = attScore(c); return '<td class="s" style="color:' + BCOL[r.id] + ";background:rgba(255,255,255," + (s / 95 * 0.14).toFixed(3) + ')" title="' + esc(c ? PLAB[c.position] + (c.motif ? " · " + c.motif : "") : "") + '">' + (c && c.position !== "absente" ? s : "·") + "</td>"; };
-      $("#p-attaques").innerHTML = shead(2, "Où le RN, LFI et la droite attaqueront-ils ?", "Attaques probables",
+      $("#p-attaques").innerHTML = shead(4, "Où le RN, LFI et la droite attaqueront-ils ?", "Attaques probables",
         "Pour chaque mesure analysée, la position de chaque adversaire d'après nos revues de leurs programmes, convertie en score d'exposition (barème dans l'onglet Méthode), croisée avec la solidité de la mesure selon nos preuves. En bas à droite : les mesures fragiles et attaquables, à corriger en priorité.") +
         '<div class="dash"><div class="panelbox scat"><div class="boxt">Exposition et solidité</div><div class="boxs">Chaque point est une mesure, coloré selon l\'adversaire le plus menaçant. Survoler pour le détail, cliquer pour ouvrir la mesure.</div>' + svg +
         '<div class="legend">' + RIV.map(function (r) { return '<span><i style="background:' + BCOL[r.id] + '"></i>' + esc(r.bloc) + "</span>"; }).join("") + "</div></div>" +
         '<div class="panelbox"><div class="boxt">À corriger en priorité</div><div class="boxs">Fragiles selon nos preuves (solidité sous 50) et les plus exposées.</div><ol class="top5">' +
         sorted.filter(function (m) { return m._sol != null && m._sol < 50; }).slice(0, 8).map(function (m) { var c = m._att && m._att[m._top]; return '<li><a data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + '<br><span class="pp" style="color:' + (BCOL[m._top] || "") + '">' + esc(blocOf(m._top)) + " · " + m._expo + "</span>" + (c && c.motif ? '<span class="pp"> · ' + esc(c.motif) + "</span>" : "") + "</li>"; }).join("") + "</ol></div></div>" +
         '<h3 class="sub">Toutes les mesures analysées</h3><div style="overflow-x:auto"><table class="heat"><thead><tr><th>Mesure</th>' + RIV.map(function (r) { return "<th>" + esc(r.bloc) + "</th>"; }).join("") + "<th>Solidité</th></tr></thead><tbody>" +
-        sorted.map(function (m) { return '<tr><td><a data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + "</td>" + RIV.map(function (r) { return cell(m, r); }).join("") + '<td class="s">' + (m._sol != null ? Math.round(m._sol) : "·") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+        sorted.map(function (m) { return '<tr' + ds("n°" + m.num + " " + m.titre) + '><td><a data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + "</td>" + RIV.map(function (r) { return cell(m, r); }).join("") + '<td class="s">' + (m._sol != null ? Math.round(m._sol) : "·") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
         '<p class="pp">Source : ' + esc(AT.source) + ". Survoler une case pour le motif ; le détail est dans chaque fiche mesure.</p>";
       var tip = $("#gtip");
       $$("#p-attaques .dot").forEach(function (g) {
@@ -244,15 +260,15 @@
         g.addEventListener("mouseleave", function () { tip.style.display = "none"; });
       });
     } else {
-      $("#p-attaques").innerHTML = shead(2, "Où le RN, LFI et la droite attaqueront-ils ?", "Attaques probables", "") + '<p class="empty">Analyse en cours.</p>';
+      $("#p-attaques").innerHTML = shead(4, "Où le RN, LFI et la droite attaqueront-ils ?", "Attaques probables", "") + '<p class="empty">Analyse en cours.</p>';
     }
 
     // ---------- 04 questions
-    $("#p-questions").innerHTML = shead(3, "Que faut-il faire préciser à l'équipe programme ?", "Questions à l'équipe", "Les points qui conditionnent le chiffrage et la défense des mesures, thème par thème.") +
-      P.questions.map(function (q) { return '<div class="box qr"><h4>' + esc(q.theme) + "</h4><ul>" + q.items.map(function (i) { return "<li>" + inline(i) + "</li>"; }).join("") + "</ul></div>"; }).join("");
+    $("#p-questions").innerHTML = shead(5, "Que faut-il faire préciser à l'équipe programme ?", "Questions à l'équipe", "Les points qui conditionnent le chiffrage et la défense des mesures, thème par thème.") +
+      P.questions.map(function (q) { return '<div class="box qr"><h4>' + esc(q.theme) + "</h4><ul>" + q.items.map(function (i) { return "<li" + ds(q.theme + " " + i) + ">" + inline(i) + "</li>"; }).join("") + "</ul></div>"; }).join("");
 
     // ---------- 05 adversaires
-    $("#p-adversaires").innerHTML = shead(4, "Que valent les programmes concurrents ?", "Adversaires", "Les revues du groupe, proposition par proposition, et les fiches riposte : citation exacte, verdict sur chaque chiffre, riposte en trois phrases.") + '<div class="subtabs" id="advtabs"></div><div id="advbody"></div>';
+    $("#p-adversaires").innerHTML = shead(6, "Que valent les programmes concurrents ?", "Adversaires", "Les revues du groupe, proposition par proposition, et les fiches riposte : citation exacte, verdict sur chaque chiffre, riposte en trois phrases.") + '<div class="subtabs" id="advtabs"></div><div id="advbody"></div>';
     A.forEach(function (a) { var b = document.createElement("button"); b.className = "chip"; b.textContent = a.nom; b.setAttribute("data-id", a.id); b.addEventListener("click", function () { showAdv(a.id); }); $("#advtabs").appendChild(b); });
     function showAdv(id) {
       var a = advById[id];
@@ -261,42 +277,42 @@
       if (a.riposte) {
         h += '<h3 class="sub">Fiches riposte</h3>' + (a.riposte.en_bref ? '<div class="box"><h4>En bref</h4>' + md(a.riposte.en_bref) + "</div>" : "");
         h += a.riposte.fiches.map(function (f) {
-          return '<article class="card"><div class="card-h">' + (f.verdict ? badge(f.verdict, f.verdict) : "") + '</div><div class="titre">' + esc(f.titre) + "</div>" +
+          return '<article class="card"' + ds(f.titre + " " + (f["Ce qui a été dit"] || "") + " " + (f["Riposte"] || "") + " " + (f["Vérification"] || "")) + '><div class="card-h">' + (f.verdict ? badge(f.verdict, f.verdict) : "") + '</div><div class="titre">' + esc(f.titre) + "</div>" +
             (f["Ce qui a été dit"] ? '<p class="msg">' + inline(f["Ce qui a été dit"]) + "</p>" : "") + (f["Riposte"] ? '<div class="box edl"><h4>Riposte (élément de langage)</h4>' + md(f["Riposte"]) + "</div>" : "") +
-            '<details class="more"><summary>Vérification, coût et sources</summary>' + Object.keys(f).filter(function (k) { return ["titre", "verdict", "Ce qui a été dit", "Riposte"].indexOf(k) < 0; }).map(function (k) { return "<h4>" + esc(k) + "</h4>" + md(f[k]); }).join("") + "</details></article>";
+            '<details class="more"><summary>Vérification, coût et sources</summary>' + Object.keys(f).filter(function (k) { return ["titre", "verdict", "Ce qui a été dit", "Riposte"].indexOf(k) < 0; }).map(function (k) { return "<h4>" + esc(k) + "</h4>" + md(f[k]); }).join("") + "</details>" + corr(a.nom + " · fiche riposte", f.titre) + "</article>";
         }).join("");
       }
-      h += '<h3 class="sub">Revue complète, proposition par proposition</h3>' + a.themes.map(function (t) { return '<p class="kicker" style="margin:22px 0 10px">' + esc(t.theme) + "</p>" + t.items.map(function (it) { return '<details class="card"><summary><strong>' + esc(it.titre) + "</strong></summary>" + md(it.texte) + "</details>"; }).join(""); }).join("");
-      $("#advbody").innerHTML = h;
+      h += '<h3 class="sub">Revue complète, proposition par proposition</h3>' + a.themes.map(function (t) { return '<p class="kicker" style="margin:22px 0 10px">' + esc(t.theme) + "</p>" + t.items.map(function (it) { return '<details class="card"' + ds(it.titre + " " + it.texte) + '><summary><strong>' + esc(it.titre) + "</strong></summary>" + md(it.texte) + corr(a.nom + " · revue", it.titre) + "</details>"; }).join(""); }).join("");
+      $("#advbody").innerHTML = h; applyFilter();
     }
     showAdv(A[0].id);
 
     // ---------- 06 comparer
-    $("#p-comparer").innerHTML = shead(5, "Qui propose quoi, thème par thème ?", "Comparer les programmes", "Les propositions de chaque candidat regroupées par grand thème. Cliquer sur une mesure d'Édouard Philippe ouvre sa fiche.") +
+    $("#p-comparer").innerHTML = shead(7, "Qui propose quoi, thème par thème ?", "Comparer les programmes", "Les propositions de chaque candidat regroupées par grand thème. Cliquer sur une mesure d'Édouard Philippe ouvre sa fiche.") +
       '<div style="overflow-x:auto"><table class="cmp"><thead><tr><th>Thème</th><th>Édouard Philippe</th>' + A.map(function (a) { return "<th>" + esc(a.nom) + "</th>"; }).join("") + "</tr></thead><tbody>" +
-      C.comparaison.map(function (r) { return "<tr><th>" + esc(r.theme) + "</th><td><ul>" + r.philippe.map(function (m) { return '<li><a data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + (m.analyses ? " ✓" : "") + "</li>"; }).join("") + "</ul></td>" + A.map(function (a) { return "<td><ul>" + r.adv[a.id].map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul></td>"; }).join("") + "</tr>"; }).join("") +
+      C.comparaison.map(function (r) { return "<tr" + ds(r.theme + " " + r.philippe.map(function (m) { return "n°" + m.num + " " + m.titre; }).join(" ") + " " + A.map(function (a) { return r.adv[a.id].join(" "); }).join(" ")) + "><th>" + esc(r.theme) + "</th><td><ul>" + r.philippe.map(function (m) { return '<li><a data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + (m.analyses ? " ✓" : "") + "</li>"; }).join("") + "</ul></td>" + A.map(function (a) { return "<td><ul>" + r.adv[a.id].map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul></td>"; }).join("") + "</tr>"; }).join("") +
       '</tbody></table></div><p class="pp">✓ = mesure analysée par le groupe.</p>';
 
     // ---------- 07 échéances
     var years = {}; ECH.forEach(function (e) { var y = e.date.slice(0, 4); years[y] = (years[y] || 0) + 1; });
     var effCls = function (e) { return /expire/.test(e.effet) ? "exp" : /vigueur/.test(e.effet) ? "vig" : ""; };
-    $("#p-echeances").innerHTML = shead(6, "Qu'est-ce qui expire, et qu'est-ce qui tombe pendant le quinquennat ?", "Échéances",
+    $("#p-echeances").innerHTML = shead(8, "Qu'est-ce qui expire, et qu'est-ce qui tombe pendant le quinquennat ?", "Échéances",
       "Les dates juridiques et budgétaires qui changent le contexte des mesures du livret : dispositifs qui expirent, règles qui entrent en vigueur, objectifs à tenir. Chaque date vient d'une source du groupe ; celles qui restent à vérifier sont signalées.") +
       '<div class="ruler">' + Object.keys(years).sort().map(function (y) { return '<div class="' + (+y === today.getFullYear() ? "hot" : "") + '"><b>' + years[y] + '</b><div class="t">' + y + '</div><div class="w">échéance' + (years[y] > 1 ? "s" : "") + "</div></div>"; }).join("") + "</div>" +
       '<div class="legend"><span><i style="background:var(--red)"></i>Expire</span><span><i style="background:var(--sol)"></i>Entre en vigueur</span><span><i style="background:var(--txt2)"></i>Autre (vote, objectif)</span></div>' +
       '<div class="vline">' + ECH.map(function (e) {
         var d = days(e.date);
-        return '<div class="vstep ' + effCls(e) + (d < 0 ? " past" : "") + '"><div class="d">' + esc(fdate(e.date, e.precision)) + (d >= 0 && d < 400 ? ' <span class="pp">· J-' + d + "</span>" : "") + '</div><div class="w">' + esc(e.quoi) + '</div><div class="tg">' + esc(e.effet) + (e.verifie ? "" : " · à vérifier") +
+        return '<div' + ds(e.quoi + " " + e.source + " " + (e.mesures || []).map(function (n) { return "n°" + n; }).join(" ")) + ' class="vstep ' + effCls(e) + (d < 0 ? " past" : "") + '"><div class="d">' + esc(fdate(e.date, e.precision)) + (d >= 0 && d < 400 ? ' <span class="pp">· J-' + d + "</span>" : "") + '</div><div class="w">' + esc(e.quoi) + '</div><div class="tg">' + esc(e.effet) + (e.verifie ? "" : " · à vérifier") +
           (e.mesures && e.mesures.length ? " · " + e.mesures.map(function (n) { return '<a data-n="' + n + '">N°' + n + "</a>"; }).join(", ") : "") + '</div><div class="pp">' + esc(e.source) + "</div></div>";
       }).join("") + "</div>";
 
     // ---------- 08 calendrier
-    $("#p-calendrier").innerHTML = shead(7, "Quand le candidat parle-t-il de quoi ?", "Calendrier de campagne", "Les rendez-vous annoncés par le candidat, pour préparer notes et ripostes à l'avance.") +
-      '<div class="hline">' + C.calendrier.map(function (e) { var d = days(e.date); return '<div class="hstep' + (d < 0 ? " past" : "") + (/tour/.test(e.sujet) ? " key" : "") + '"><span class="dt"></span><b>' + esc(e.quand) + "</b><p>" + esc(e.sujet) + '</p><span class="j">' + (d > 0 ? "dans " + d + " jours" : d === 0 ? "aujourd'hui" : "passé") + "</span></div>"; }).join("") + "</div>" +
+    $("#p-calendrier").innerHTML = shead(9, "Quand le candidat parle-t-il de quoi ?", "Calendrier de campagne", "Les rendez-vous annoncés par le candidat, pour préparer notes et ripostes à l'avance.") +
+      '<div class="hline">' + C.calendrier.map(function (e) { var d = days(e.date); return '<div' + ds(e.sujet + " " + e.quand) + ' class="hstep' + (d < 0 ? " past" : "") + (/tour/.test(e.sujet) ? " key" : "") + '"><span class="dt"></span><b>' + esc(e.quand) + "</b><p>" + esc(e.sujet) + '</p><span class="j">' + (d > 0 ? "dans " + d + " jours" : d === 0 ? "aujourd'hui" : "passé") + "</span></div>"; }).join("") + "</div>" +
       '<p class="pp">Sources : ' + esc(C.calendrier.map(function (e) { return e.source; }).filter(function (s, i, a) { return a.indexOf(s) === i; }).join(" ; ")) + "</p>";
 
     // ---------- 09 méthode
-    $("#p-methode").innerHTML = shead(8, "Comment lire ce site ?", "Méthode et sources", "") +
+    $("#p-methode").innerHTML = shead(10, "Comment lire ce site ?", "Méthode et sources", "") +
       '<div class="legendb">' + ["solide", "bonne-direction", "mal-ciblee", "mal-calibree", "mal-concue", "a-chiffrer", "a-preciser", "non-analysee"].map(function (v) { return badge(v); }).join("") + "</div>" +
       '<ul class="method"><li><strong>Bien fondée</strong> : les études soutiennent la mesure telle qu\'écrite. <strong>Bonne direction</strong> : le diagnostic est juste, l\'instrument est à ajuster. <strong>Mal ciblée</strong> : elle profite surtout à d\'autres publics que ceux visés, ou passe à côté du problème. <strong>Mal calibrée</strong> : montant, seuil ou calendrier à revoir. <strong>Mal conçue</strong> : l\'instrument ne produira pas l\'effet annoncé. <strong>À chiffrer</strong> : coût absent. <strong>À préciser</strong> : la forme de la mesure n\'est pas encore connue.</li>' +
       "<li><strong>Solidité</strong> (0 à 100) : moyenne des verdicts d'une mesure (bien fondée 100, bonne direction 70, à préciser ou à chiffrer 50, mal calibrée 35, mal ciblée 30, mal conçue 15).</li>" +
@@ -305,6 +321,72 @@
       "<li>Les mesures et les éléments de langage de la campagne sont repris mot pour mot du livret (" + esc(P.source.livret) + ") et du site edouardphilippe.fr. Les éléments de langage proposés sont des suggestions du groupe.</li></ul>" +
       '<h3 class="sub">Mises à jour</h3><ul class="method"><li>Programme Philippe : revue du ' + fdate(P.source.maj) + "</li>" + A.map(function (a) { return "<li>" + esc(a.nom) + " : revue du " + fdate(a.source.maj) + (a.source.fiches_maj ? ", fiches riposte du " + fdate(a.source.fiches_maj) : "") + "</li>"; }).join("") + "</ul>" +
       '<details class="more"><summary>Sources de l\'analyse du programme Philippe</summary>' + md(P.sources_md) + "</details>";
+
+    // ---------- 03 ce qui a changé
+    if (C.versions) {
+      var VS = C.versions.changements, vst = null;
+      var vcount = function (s) { return VS.filter(function (v) { return v.statut === s; }).length; };
+      $("#p-versions").innerHTML = shead(2, "Qu'est-ce qui a changé entre le site et le livret ?", "Ce qui a changé",
+        "Chaque écart entre le programme publié sur le site (" + esc(C.versions.avant) + ") et le " + esc(C.versions.apres) + ", cité mot pour mot des deux côtés. Les prochains volumes s'ajouteront ici.") +
+        '<div class="filters" id="f-ver"><span class="lbl">Statut</span></div><div id="vers"></div>';
+      ["modifie", "precise", "nouveau", "retire"].forEach(function (s) { if (!vcount(s)) return; var b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", "false"); b.innerHTML = esc(SLAB[s]) + '<span class="n">' + vcount(s) + "</span>"; b.addEventListener("click", function () { vst = vst === s ? null : s; renderV(); }); b._v = s; $("#f-ver").appendChild(b); });
+      var renderV = function () {
+        $$("#f-ver .chip").forEach(function (b) { b.setAttribute("aria-pressed", vst === b._v); });
+        $("#vers").innerHTML = VS.filter(function (v) { return !vst || v.statut === vst; }).map(function (v) {
+          var m = v.num != null ? P.mesures.filter(function (x) { return x.num === v.num; })[0] : null;
+          return '<article class="card s-' + v.statut + '"' + ds((v.num != null ? "n°" + v.num + " " : "") + (v.theme || "") + " " + v.avant + " " + v.apres) + '><div class="card-h">' + (v.num != null ? '<a class="num" data-n="' + v.num + '">N°' + v.num + "</a>" : (v.priorite ? '<span class="num">Priorité ' + esc(v.priorite) + "</span>" : "")) + "<span>" + esc(v.theme || "") + "</span>" + badge(v.statut, SLAB[v.statut]) + "</div>" +
+            (m ? '<div class="titre">' + esc(m.titre) + "</div>" : "") + '<div class="vcmp"><div class="av"><h4>Avant (site)</h4>' + (v.avant ? esc(v.avant) : '<span class="empty">Absente du site</span>') + '<p class="pp">' + esc(v.avant_source) + '</p></div><div class="ap"><h4>Livret du 18 novembre</h4>' + (v.apres ? esc(v.apres) : '<span class="empty">Absente du livret</span>') + "</div></div>" +
+            (v.note ? '<p class="pp">' + esc(v.note) + "</p>" : "") + corr(v.num != null ? "N°" + v.num + " · version" : "version", m ? m.titre : v.avant) + "</article>";
+        }).join("") || '<p class="empty">Aucun changement.</p>';
+        applyFilter();
+      };
+      renderV();
+    } else $("#p-versions").innerHTML = shead(2, "Qu'est-ce qui a changé entre le site et le livret ?", "Ce qui a changé", "") + '<p class="empty">En cours.</p>';
+
+    // ---------- 04 nos ajouts
+    if (C.ajouts) {
+      var AJ = C.ajouts.ajouts, ast = { g: null, r: null };
+      var groups = []; AJ.forEach(function (a) { if (groups.indexOf(a.groupe) < 0) groups.push(a.groupe); });
+      $("#p-ajouts").innerHTML = shead(3, "Que proposons-nous que le livret ne dit pas encore ?", "Ce que nos travaux ajoutent",
+        "Les propositions du groupe, citées mot pour mot de ses notes, avec les mesures du livret qu'elles complètent ou corrigent, et celles qui n'ont pas encore d'équivalent dans le programme.") +
+        '<div class="filters" id="f-ag"><span class="lbl">Groupe</span></div><div class="filters" id="f-ar"><span class="lbl">Rapport au livret</span></div><div id="ajl"></div>';
+      var achip = function (box, key, val, lab, n) { var b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", "false"); b.innerHTML = esc(lab) + '<span class="n">' + n + "</span>"; b.addEventListener("click", function () { ast[key] = ast[key] === val ? null : val; renderA(); }); b._k = key; b._v = val; box.appendChild(b); };
+      groups.forEach(function (g) { achip($("#f-ag"), "g", g, g, AJ.filter(function (a) { return a.groupe === g; }).length); });
+      Object.keys(RLAB).forEach(function (r) { var n = AJ.filter(function (a) { return a.relation === r; }).length; if (n) achip($("#f-ar"), "r", r, RLAB[r], n); });
+      var renderA = function () {
+        $$("#p-ajouts .chip").forEach(function (b) { b.setAttribute("aria-pressed", ast[b._k] === b._v); });
+        $("#ajl").innerHTML = AJ.filter(function (a) { return (!ast.g || a.groupe === ast.g) && (!ast.r || a.relation === ast.r); }).map(function (a) {
+          return '<article class="card r-' + rkey(a.relation) + '"' + ds(a.titre + " " + a.texte + " " + a.groupe + " " + (a.mesures || []).map(function (n) { return "n°" + n; }).join(" ")) + '><div class="card-h"><span>' + esc(a.groupe) + "</span>" + badge(rkey(a.relation) === "nouveau" ? "nouvelle" : rkey(a.relation), RLAB[a.relation] || a.relation) + (a.statut ? '<span class="badge b-a-preciser">' + esc(a.statut) + "</span>" : "") + "</div>" +
+            '<div class="titre">' + esc(a.titre) + '</div><p class="texte">' + esc(String(a.texte).replace(/[¹²³⁴⁵⁶⁷⁸⁹⁰]+/g, "")) + "</p>" +
+            ((a.mesures || []).length ? '<p class="pp">Mesures du livret : ' + a.mesures.map(function (n) { return '<a data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : '<p class="pp">Pas encore d\'équivalent dans le livret.</p>') +
+            '<p class="pp">Source : ' + esc(a.note) + "</p>" + corr("Ajout du groupe", a.titre) + "</article>";
+        }).join("");
+        applyFilter();
+      };
+      renderA();
+    } else $("#p-ajouts").innerHTML = shead(3, "Que proposons-nous que le livret ne dit pas encore ?", "Ce que nos travaux ajoutent", "") + '<p class="empty">En cours.</p>';
+
+    // ---------- recherche globale
+    var GQ = "";
+    function applyFilter() {
+      $$("[data-s]").forEach(function (el) { el.hidden = !mt(el.getAttribute("data-s"), GQ); });
+    }
+    var advHits = function (q) { var n = 0; A.forEach(function (a) { a.themes.forEach(function (t) { t.items.forEach(function (it) { if (norm(it.titre + " " + it.texte).length && mt(norm(it.titre + " " + it.texte), q)) n++; }); }); if (a.riposte) a.riposte.fiches.forEach(function (f) { if (norm(f.titre + " " + (f["Ce qui a été dit"] || "") + " " + (f["Riposte"] || "") + " " + (f["Vérification"] || "")).length && mt(norm(f.titre + " " + (f["Ce qui a été dit"] || "") + " " + (f["Riposte"] || "") + " " + (f["Vérification"] || "")), q)) n++; }); }); return n; };
+    function gsearch(q) {
+      GQ = norm(q.trim());
+      st.q = GQ; $("#q").value = q; renderP(); applyFilter();
+      $$(".tab").forEach(function (t) {
+        var id = t.id.slice(2), em = t.querySelector(".hits"), n = null;
+        if (!GQ || id === "synthese" || id === "methode") { em.hidden = true; return; }
+        if (id === "philippe") n = P.mesures.filter(function (m) { return (!st.onlyA || m.analyses.length) && mt(m._txt, GQ); }).length;
+        else if (id === "adversaires") n = advHits(GQ);
+        else n = $$("#p-" + id + " [data-s]").filter(function (el) { return !el.hidden; }).length;
+        em.hidden = false; em.textContent = n; em.className = "hits" + (n ? "" : " z");
+      });
+    }
+    $("#gq").hidden = false;
+    $("#gq").addEventListener("input", function () { gsearch(this.value); });
+    $("#q").addEventListener("input", function () { $("#gq").value = this.value; gsearch(this.value); });
 
     // liens transversaux
     document.addEventListener("click", function (ev) {
