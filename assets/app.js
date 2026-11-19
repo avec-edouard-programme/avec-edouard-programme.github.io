@@ -285,6 +285,20 @@
       var h = "", withAtt = t.an.filter(function (m) { return m._att; });
       if (withAtt.length) h += '<h2 class="h2">Les mesures de Philippe face aux autres programmes</h2><div class="scroll"><table class="cmp"><thead><tr><th>Mesure de Philippe</th>' + RIV.map(function (r) { return "<th>" + esc(r.bloc) + "</th>"; }).join("") + "</tr></thead><tbody>" +
         withAtt.map(function (m) { return '<tr><td><a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + "</td>" + RIV.map(function (r) { var c = m._att[r.id], p = c ? c.position : "absente"; return '<td class="p-' + p + '"><b class="ml">' + esc(r.bloc) + ' : </b>' + esc(PLAB[p]) + (c && c.proposition && p !== "absente" ? '<span class="mut">' + esc(c.proposition) + "</span>" : "") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+      var comm = [];
+      t.adv.forEach(function (x) { x.fiches.forEach(function (f) {
+        var autres = (f.aussi || []).filter(function (y) { return !/philippe/i.test(y.candidat); });
+        var ph = (f.aussi || []).filter(function (y) { return /philippe/i.test(y.candidat); });
+        if (autres.length) comm.push({ a: x.a, f: f, autres: autres, ph: ph });
+      }); });
+      if (comm.length) {
+        h += '<h2 class="h2">Attaques communes</h2><p class="mut">Fiches dont la critique vaut aussi contre d\'autres candidats (même proposition ou proposition voisine). « Attention » signale qu\'une proposition proche figure dans le programme de Philippe : attaquer le financement ou le calibrage, pas le principe.</p><ul class="lst comm">' +
+          comm.map(function (c) {
+            return '<li><a href="#" data-go="' + t.id + '" data-sub="adversaires" data-r="' + rid(c.f.titre) + '"><b>' + esc(c.a.nom) + "</b> : " + esc(c.f.titre) + "</a>" + (c.f.verdicts ? " " + c.f.verdicts.map(function (v) { return badge(v); }).join("") : "") +
+              '<p>Vaut aussi contre : ' + c.autres.map(function (y) { return esc(y.candidat) + ' <span class="mut">(' + esc(y.degre || "") + ")</span>"; }).join(", ") + "</p>" +
+              (c.ph.length ? '<p class="warn">Attention : ' + c.ph.map(function (y) { return inline(y.detail || "proposition proche chez Philippe"); }).join(" ") + "</p>" : "") + "</li>";
+          }).join("") + "</ul>";
+      }
       t.adv.forEach(function (x) {
         if (!x.items.length && !x.fiches.length) return;
         h += '<h2 class="h2">' + esc(x.a.nom) + ' <span class="mut">· ' + (x.a.source.maj ? "revue du " + fdate(x.a.source.maj) : "fiches riposte du " + fdate(x.a.source.fiches_maj)) + "</span></h2>";
