@@ -189,6 +189,15 @@
       return h + "</div></details>";
     }
     var rid = function (t) { var x = 0, s = norm(t); for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) | 0; return "r" + (x >>> 0).toString(36); };
+    // ---------- positions déclarées (2027 et moi, Licence Ouverte ; France-Vote en lien seulement)
+    var X = C.externe, ELAB = { pour: "Pour", plutot_pour: "Plutôt pour", nuance: "Nuancé", plutot_contre: "Plutôt contre", contre: "Contre", non_connu: "Non connu" };
+    var xsrc = function (s) { return s && s.url ? ' <a class="xs" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.titre || "source") + (s.date ? ", " + esc(fdate(s.date, String(s.date).length === 7 ? "mois" : null)) : "") + "</a>" : ""; };
+    var xcred = function () { return X ? '<p class="mut">Source : <a href="' + esc(X.source.url) + '" target="_blank" rel="noopener">2027 et moi</a>, données mises à jour le ' + fdate(X.source.mise_a_jour) + " (" + esc(X.source.licence) + "). Pour comparer, voir aussi " + X.candidats.map(function (c) { return '<a href="' + esc(X.france_vote[c.id]) + '" target="_blank" rel="noopener">' + esc(c.court) + "</a>"; }).join(", ") + ' sur France-Vote.</p>' : ""; };
+    var xtable = function (qs) {
+      if (!X || !qs.length) return "";
+      return '<div class="scroll"><table class="cmp xt"><thead><tr><th>Question</th>' + X.candidats.map(function (c) { return "<th>" + esc(c.court) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        qs.map(function (q) { return "<tr><td>" + esc(q.texte) + "</td>" + X.candidats.map(function (c) { var p = q.positions[c.id], v = p ? p.position : "non_connu"; return '<td class="e-' + v + '"><b class="ml">' + esc(c.court) + " : </b>" + esc(ELAB[v] || v) + (p && p.resume ? '<span class="mut">' + esc(p.resume) + xsrc(p.source) + "</span>" : "") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+    };
     var mlink = function (m, extra) { return '<li><a href="#" data-n="' + m.num + '">N°' + m.num + " " + esc(m.titre) + "</a>" + (extra || "") + "</li>"; };
 
     // ---------- accueil
@@ -248,6 +257,8 @@
       if (qs.length) h += '<details class="in"><summary>Questions à poser à l\'équipe programme</summary>' + qs.map(function (q) { return "<ul>" + q.items.map(function (i) { return "<li>" + inline(i) + "</li>"; }).join("") + "</ul>"; }).join("") + "</details>";
       var ech = (C.echeances || []).filter(function (e) { return e.theme === t.id && days(e.date) >= -365; });
       if (ech.length) h += '<details class="in"><summary>Échéances qui touchent ce thème (' + ech.length + ")</summary><ul>" + ech.map(function (e) { return "<li><b>" + esc(fdate(e.date, e.precision)) + "</b> " + esc(e.quoi) + ' <span class="mut">(' + esc(e.effet) + (e.verifie ? "" : ", à vérifier") + ", " + esc(e.source) + ")</span></li>"; }).join("") + "</ul></details>";
+      var xq = X ? X.questions.filter(function (q) { return q.onglet === t.id; }) : [];
+      if (xq.length) h += '<h2 class="h2">Positions déclarées sur les grandes questions</h2><p class="mut">Ce que chaque candidat a dit ou écrit, question par question, avec la source et la date. Relevé tenu à jour chaque jour.</p>' + xtable(xq) + xcred();
       if (t.encours) h += '<p class="encours"><b>En cours au groupe :</b> ' + inline(t.encours) + "</p>";
       if (!t.an.length && !h) h = '<p class="mut">Ce thème n\'a pas encore été analysé par le groupe. Les mesures du livret sont dans l\'onglet « Mesures de Philippe ».</p>';
       $("#p-" + t.id + ' [data-p="synthese"]').innerHTML = h;
@@ -278,6 +289,18 @@
         });
         x.items.forEach(function (it) { h += '<details class="mes" id="' + rid(it.titre) + '"><summary><div class="mt">' + esc(it.titre) + '</div><p class="verd">' + inline(firstSentence(it.texte)) + '</p></summary><div class="mb">' + md(it.texte) + "</div></details>"; });
       });
+      if (X) {
+        var xh = "";
+        X.candidats.filter(function (c) { return c.id !== "philippe"; }).forEach(function (c) {
+          var it = ((X.mesures[c.id] || {}).items || []).filter(function (m) { return m.onglet === t.id; });
+          var pr = X.prises_de_parole.filter(function (x) { return x.id === c.id && x.onglets.indexOf(t.id) >= 0; });
+          if (!it.length && !pr.length) return;
+          xh += '<details class="in"><summary>' + esc(c.nom) + " · " + (it.length ? plural(it.length, "mesure") : "") + (it.length && pr.length ? ", " : "") + (pr.length ? plural(pr.length, "prise") + " de parole récente" + (pr.length > 1 ? "s" : "") : "") + "</summary>" +
+            (it.length ? '<ul class="lst">' + it.map(function (m) { return "<li>" + esc(m.texte) + ' <span class="mut">' + (m.nature === "declaration" ? "déclaration · " : "") + xsrc(m.source) + "</span></li>"; }).join("") + "</ul>" : "") +
+            (pr.length ? '<ul class="lst">' + pr.map(function (x) { return "<li><b>" + esc(fdate(x.date)) + "</b> · " + esc(x.type) + ", " + esc(x.media) + (x.declare.length ? "<p>" + x.declare.map(esc).join(" ") + "</p>" : "") + ' <a class="xs" href="' + esc(x.url) + '" target="_blank" rel="noopener">source</a></li>'; }).join("") + "</ul>" : "") + "</details>";
+        });
+        if (xh) h += '<h2 class="h2">Mesures et déclarations recensées ailleurs</h2><p class="mut">Relevé indépendant, mis à jour chaque jour, qui complète nos revues.</p>' + xh + xcred();
+      }
       $("#p-" + t.id + ' [data-p="adversaires"]').innerHTML = h || '<p class="mut">Les revues des programmes adverses ne couvrent pas encore ce thème.</p>';
     }
 
@@ -286,6 +309,8 @@
       "<h2 class=\"h2\">Verdicts</h2><p>" + ["solide", "bonne-direction", "mal-ciblee", "mal-calibree", "mal-concue", "a-chiffrer", "a-preciser", "non-analysee"].map(function (v) { return badge(v); }).join(" ") + "</p>" +
       "<ul><li><strong>Bien fondée</strong> : les études soutiennent la mesure telle qu'écrite.</li><li><strong>Bonne direction</strong> : le diagnostic est juste, l'instrument est à ajuster.</li><li><strong>Mal ciblée</strong> : elle profite surtout à d'autres publics que ceux visés.</li><li><strong>Mal calibrée</strong> : montant, seuil ou calendrier à revoir.</li><li><strong>Mal conçue</strong> : l'instrument ne produira pas l'effet annoncé.</li><li><strong>À chiffrer</strong> : coût absent. <strong>À préciser</strong> : la forme de la mesure n'est pas encore connue.</li></ul>" +
       '<h2 class="h2">Analyse économique (mesures régaliennes et autres)</h2><p>Pour les mesures qui ne se prêtent pas à un verdict d\'efficacité (sécurité, justice, immigration, défense, Outre-mer…), le groupe donne une analyse neutre : coût estimé et source, et écart avec la politique actuelle. <strong>Continuité</strong> : le dispositif existe déjà. <strong>Inflexion</strong> : extension ou renforcement d\'un dispositif existant. <strong>Rupture</strong> : nouveau principe ou changement de droit.</p><h2 class="h2">Sensibilité politique</h2><p>Prédiction du groupe, mesure par mesure : forte, moyenne ou faible, selon la taille et la visibilité des perdants, le poids symbolique du sujet et le fait que les adversaires en font un thème phare. C\'est une estimation, pas un sondage.</p>' +
+      (X ? '<h2 class="h2">À propos des positions déclarées</h2><p>Les positions affichées dans « Positions déclarées » et « Mesures et déclarations recensées ailleurs » viennent de 2027 et moi, un site indépendant qui relève, pour chaque candidat, ses prises de position avec leur source et leur date. Ses données sont publiques (' + esc(X.source.licence) + ') : nous les récupérons chaque jour et republions le site. Elles ne remplacent pas nos analyses : elles disent ce que le candidat a déclaré, pas si la mesure est bonne. Pour un second regard, chaque bloc renvoie aussi vers la fiche du candidat sur France-Vote, qui estime ses positions à partir de ses déclarations, de ses votes et des textes de son parti ; nous n\'en reprenons pas le contenu. Les programmes pour 2027 ne sont pas tous publiés ni complets : ces positions peuvent changer d\'ici l\'élection. « Non connu » signifie qu\'aucune source vérifiable n\'a été trouvée, pas que le candidat n\'a pas d\'avis.</p><p class="mut">Dernière récupération : ' + fdate(X.recupere_le) + ". Données 2027 et moi du " + fdate(X.source.mise_a_jour) + ' (<a href="' + esc(X.source.depot) + '" target="_blank" rel="noopener">dépôt public</a>).</p>' +
+        (function () { var o = X.questions.filter(function (q) { return !q.onglet; }); return o.length ? '<h3>Autres questions (hors thèmes du site)</h3>' + xtable(o) : ""; })() : "") +
       '<h2 class="h2">Positions des adversaires</h2><p>Pour chaque mesure analysée, la position de chaque adversaire d\'après nos revues de leurs programmes : opposée, désaccord partiel, proche, ou pas de position. Chaque proposition adverse est rangée dans un seul thème.</p>' +
       "<h2 class=\"h2\">Preuves</h2><p>Études causales (françaises d'abord), puis évaluations officielles (Cour des comptes, CAE, Insee, DREES, IPP, OCDE), puis chiffrages (Fipeco, Institut Montaigne). La presse sert de piste, jamais de preuve. Chaque chiffre a été lu dans sa source, sinon il est marqué « à vérifier ». Les mesures et éléments de langage de la campagne sont repris mot pour mot du livret (" + esc(P.source.livret) + ") et du site edouardphilippe.fr.</p>" +
       '<p>' + corr("site", "") + '</p><h2 class="h2">Mises à jour</h2><ul><li>Programme Philippe : revue du ' + fdate(P.source.maj) + "</li>" + A.map(function (a) { return "<li>" + esc(a.nom) + " : revue du " + fdate(a.source.maj) + (a.source.fiches_maj ? ", fiches riposte du " + fdate(a.source.fiches_maj) : "") + "</li>"; }).join("") + "</ul>" +

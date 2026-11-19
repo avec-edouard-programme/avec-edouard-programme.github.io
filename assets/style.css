@@ -138,3 +138,7 @@ details.mes{scroll-margin-top:130px}
 .b-analyse-eco{color:#3D5A80}.vbar .b-analyse-eco{background:#8FA3BF}
 .e-continuite{color:var(--mut)}.e-inflexion{color:#3D5A80;border-color:#9DB0CB}.e-rupture{color:#7A3E00;border-color:#D9A66B}
 .box.eco{background:#F4F6FA;border-color:#DCE2EC}
+/* positions déclarées (2027 et moi) */
+.xt td:first-child{min-width:200px}
+.e-pour{color:var(--sol)} .e-plutot_pour{color:var(--dir)} .e-nuance{color:var(--cib)} .e-plutot_contre{color:var(--cal)} .e-contre{color:var(--con)} .cmp td.e-non_connu{color:#B0B4BA}
+.xs{font-size:12.5px;color:var(--mut)}
