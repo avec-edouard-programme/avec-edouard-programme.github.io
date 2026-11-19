@@ -287,7 +287,7 @@
             (f["Riposte"] ? '<div class="box chg"><h4>Riposte</h4>' + md(f["Riposte"]) + "</div>" : "") +
             Object.keys(f).filter(function (k) { return ["titre", "verdict", "theme", "Ce qui a été dit", "Riposte"].indexOf(k) < 0; }).map(function (k) { return '<details class="in"><summary>' + esc(k) + "</summary>" + md(f[k]) + "</details>"; }).join("") + "</div></details>";
         });
-        x.items.forEach(function (it) { h += '<details class="mes" id="' + rid(it.titre) + '"><summary><div class="mt">' + esc(it.titre) + '</div><p class="verd">' + inline(firstSentence(it.texte)) + '</p></summary><div class="mb">' + md(it.texte) + "</div></details>"; });
+        x.items.forEach(function (it) { h += '<details class="mes' + (it.verdicts ? " v-" + it.verdicts[0] : "") + '" id="' + rid(it.titre) + '"><summary>' + (it.verdicts ? '<div class="mh">' + it.verdicts.map(function (v) { return badge(v); }).join("") + "</div>" : "") + '<div class="mt">' + esc(it.titre) + '</div><p class="verd">' + inline(it.justif || firstSentence(it.texte)) + '</p></summary><div class="mb">' + md(it.texte) + "</div></details>"; });
       });
       if (X) {
         var xh = "";
