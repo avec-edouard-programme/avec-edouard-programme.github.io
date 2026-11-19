@@ -75,8 +75,9 @@
   if (sessionStorage.getItem("pk")) getBundle().then(function (b) { return openWithKey(b64d(sessionStorage.getItem("pk")), b); }).then(start).catch(function () { sessionStorage.removeItem("pk"); });
 
   // ---------- vocabulaire
-  var VLAB = { "solide": "Bien fondée", "bonne-direction": "Bonne direction", "mal-ciblee": "Mal ciblée", "mal-calibree": "Mal calibrée", "mal-concue": "Mal conçue", "a-chiffrer": "À chiffrer", "a-preciser": "À préciser", "non-analysee": "Non analysée" };
-  var VORD = ["solide", "bonne-direction", "a-preciser", "a-chiffrer", "mal-calibree", "mal-ciblee", "mal-concue"];
+  var VLAB = { "solide": "Bien fondée", "bonne-direction": "Bonne direction", "mal-ciblee": "Mal ciblée", "mal-calibree": "Mal calibrée", "mal-concue": "Mal conçue", "a-chiffrer": "À chiffrer", "a-preciser": "À préciser", "analyse-eco": "Analyse économique", "non-analysee": "Non analysée" };
+  var VORD = ["solide", "bonne-direction", "a-preciser", "a-chiffrer", "mal-calibree", "mal-ciblee", "mal-concue", "analyse-eco"];
+  var ELAB = { continuite: "Continuité", inflexion: "Inflexion", rupture: "Rupture" };
   var VSCORE = { "solide": 100, "bonne-direction": 70, "a-preciser": 50, "a-chiffrer": 50, "mal-calibree": 35, "mal-ciblee": 30, "mal-concue": 15 };
   var POS = { opposee: 70, partielle: 45, convergente: 20, absente: 5 };
   var PLAB = { opposee: "Opposée", partielle: "Désaccord partiel", convergente: "Proche", absente: "Pas de position" };
@@ -108,13 +109,14 @@
       byNum[m.num] = m;
       var v = [];
       m.analyses.forEach(function (t) { (anal[t].verdicts || []).forEach(function (x) { if (v.indexOf(x) < 0) v.push(x); }); });
-      v.sort(function (a, b) { return VSCORE[a] - VSCORE[b]; });
+      v.sort(function (a, b) { return (VSCORE[a] == null ? 999 : VSCORE[a]) - (VSCORE[b] == null ? 999 : VSCORE[b]); });
       m._v = v.length ? v : ["non-analysee"];
       var sc = v.filter(function (x) { return VSCORE[x] != null; }).map(function (x) { return VSCORE[x]; });
       m._sol = sc.length ? sc.reduce(function (a, b) { return a + b; }, 0) / sc.length : null;
       m._att = (AT && AT.mesures[m.num]) || null; m._expo = 0; m._top = null;
       if (m._att) RIV.forEach(function (r) { var s = attScore(m._att[r.id]); if (s > m._expo) { m._expo = s; m._top = r.id; } });
       m._s = SE[m.num] || null;
+      m._e = (C.eco || {})[m.num] || null;
       m._txt = norm("n°" + m.num + " " + m.titre + " " + (m.texte || "") + " " + m.section + " " + m.analyses.join(" "));
       var a0 = m.analyses.length ? anal[m.analyses[0]] : null;
       m._piste = a0 ? ((a0.fiche || a0.detail).match(PISTE) || [])[0] || null : null;
@@ -165,12 +167,13 @@
       return '<p class="pos">' + RIV.map(function (r) { var c = m._att[r.id]; var p = c ? c.position : "absente"; return '<span class="p-' + p + '"><b>' + esc(r.bloc) + "</b> " + esc(PLAB[p]) + "</span>"; }).join("") + "</p>";
     };
     function card(m) {
-      var h = '<details class="mes v-' + m._v[0] + '" id="m' + m.num + '"><summary><div class="mh"><span class="num">N°' + m.num + "</span>" + badge(m._v[0]) + sensB(m) + (PHN[m.num] ? badge("phare", "Mesure phare jeunes", "x-") : "") + "</div>" +
+      var h = '<details class="mes v-' + m._v[0] + '" id="m' + m.num + '"><summary><div class="mh"><span class="num">N°' + m.num + "</span>" + badge(m._v[0]) + (m._e && ELAB[m._e.ecart] ? badge(m._e.ecart, ELAB[m._e.ecart], "e-") : "") + sensB(m) + (PHN[m.num] ? badge("phare", "Mesure phare jeunes", "x-") : "") + "</div>" +
         '<div class="mt">' + esc(m.titre) + "</div>";
       var one = m.analyses.length ? firstSentence(anal[m.analyses[0]].fiche || anal[m.analyses[0]].detail) : "";
       if (one) h += '<p class="verd">' + inline(one) + "</p>";
       h += "</summary><div class=\"mb\">";
       if (m.texte) h += '<blockquote class="livret">' + esc(m.texte) + '<cite>Livret, p. ' + esc(m.page) + "</cite></blockquote>";
+      if (m._e) h += '<div class="box eco"><p><b>Coût estimé :</b> ' + inline(m._e.cout) + "</p>" + (m._e.ecart_pourquoi ? "<p><b>" + esc(ELAB[m._e.ecart] || "Écart") + " par rapport à aujourd'hui :</b> " + inline(m._e.ecart_pourquoi) + "</p>" : "") + "</div>";
       if (m._s) h += '<p class="sens"><b>' + esc(SENS[m._s.niveau]) + "</b> (prédiction du groupe) : " + esc(m._s.pourquoi) + "</p>";
       if (m._piste || (m.edl_propose && m.edl_propose.par_analyse)) {
         var ep = m.edl_propose && m.edl_propose.par_analyse && m.edl_propose.par_analyse[0];
@@ -225,6 +228,12 @@
       if (t.an.length) h += '<div class="kv">' + vbar(t.an) + '<p>' + vcounts(t.an) + "</p></div>";
       var chg = t.an.filter(function (m) { return m._piste; }).sort(function (a, b) { return (a._sol || 0) - (b._sol || 0); }).slice(0, 6);
       if (chg.length) h += '<h2 class="h2">Ce que nous recommandons de changer</h2><p class="mut">Les mesures les plus fragiles d\'abord ; toutes les fiches sont dans « Mesures de Philippe ».</p><ul class="lst rec">' + chg.map(function (m) { return mlink(m, " " + badge(m._v[0]) + '<p>' + inline(m._piste) + "</p>"); }).join("") + "</ul>";
+      var ecos = t.mes.filter(function (m) { return m._e; });
+      if (ecos.length) {
+        var ec = { rupture: 0, inflexion: 0, continuite: 0 }; ecos.forEach(function (m) { if (ec[m._e.ecart] != null) ec[m._e.ecart]++; });
+        h += '<h2 class="h2">Ce qui change et ce que cela coûte</h2><p class="mut">Analyse économique neutre de ' + plural(ecos.length, "mesure") + " : " + ec.rupture + " rupture" + (ec.rupture > 1 ? "s" : "") + ", " + ec.inflexion + " inflexion" + (ec.inflexion > 1 ? "s" : "") + ", " + ec.continuite + " continuité" + (ec.continuite > 1 ? "s" : "") + ". Les ruptures d\'abord.</p><ul class=\"lst\">" +
+          ecos.filter(function (m) { return m._e.ecart === "rupture"; }).map(function (m) { return mlink(m, "<p>" + inline(m._e.ecart_pourquoi || "") + ' <span class="mut">Coût : ' + inline(m._e.cout) + "</span></p>"); }).join("") + "</ul>";
+      }
       var fortes = t.mes.filter(function (m) { return m._s && m._s.niveau === "forte"; });
       if (fortes.length) h += '<h2 class="h2">Les mesures politiquement sensibles</h2><p class="mut">Prédiction du groupe, pas un sondage.</p><ul class="lst">' + fortes.map(function (m) { return mlink(m, "<p>" + esc(m._s.pourquoi) + "</p>"); }).join("") + "</ul>";
       var withAtt = t.an.filter(function (m) { return m._att; });
@@ -275,7 +284,7 @@
     $("#p-methode").innerHTML = '<div class="thead"><h1>Méthode et sources</h1></div><div class="prose">' +
       "<h2 class=\"h2\">Verdicts</h2><p>" + ["solide", "bonne-direction", "mal-ciblee", "mal-calibree", "mal-concue", "a-chiffrer", "a-preciser", "non-analysee"].map(function (v) { return badge(v); }).join(" ") + "</p>" +
       "<ul><li><strong>Bien fondée</strong> : les études soutiennent la mesure telle qu'écrite.</li><li><strong>Bonne direction</strong> : le diagnostic est juste, l'instrument est à ajuster.</li><li><strong>Mal ciblée</strong> : elle profite surtout à d'autres publics que ceux visés.</li><li><strong>Mal calibrée</strong> : montant, seuil ou calendrier à revoir.</li><li><strong>Mal conçue</strong> : l'instrument ne produira pas l'effet annoncé.</li><li><strong>À chiffrer</strong> : coût absent. <strong>À préciser</strong> : la forme de la mesure n'est pas encore connue.</li></ul>" +
-      '<h2 class="h2">Sensibilité politique</h2><p>Prédiction du groupe, mesure par mesure : forte, moyenne ou faible, selon la taille et la visibilité des perdants, le poids symbolique du sujet et le fait que les adversaires en font un thème phare. C\'est une estimation, pas un sondage.</p>' +
+      '<h2 class="h2">Analyse économique (mesures régaliennes et autres)</h2><p>Pour les mesures qui ne se prêtent pas à un verdict d\'efficacité (sécurité, justice, immigration, défense, Outre-mer…), le groupe donne une analyse neutre : coût estimé et source, et écart avec la politique actuelle. <strong>Continuité</strong> : le dispositif existe déjà. <strong>Inflexion</strong> : extension ou renforcement d\'un dispositif existant. <strong>Rupture</strong> : nouveau principe ou changement de droit.</p><h2 class="h2">Sensibilité politique</h2><p>Prédiction du groupe, mesure par mesure : forte, moyenne ou faible, selon la taille et la visibilité des perdants, le poids symbolique du sujet et le fait que les adversaires en font un thème phare. C\'est une estimation, pas un sondage.</p>' +
       '<h2 class="h2">Positions des adversaires</h2><p>Pour chaque mesure analysée, la position de chaque adversaire d\'après nos revues de leurs programmes : opposée, désaccord partiel, proche, ou pas de position. Chaque proposition adverse est rangée dans un seul thème.</p>' +
       "<h2 class=\"h2\">Preuves</h2><p>Études causales (françaises d'abord), puis évaluations officielles (Cour des comptes, CAE, Insee, DREES, IPP, OCDE), puis chiffrages (Fipeco, Institut Montaigne). La presse sert de piste, jamais de preuve. Chaque chiffre a été lu dans sa source, sinon il est marqué « à vérifier ». Les mesures et éléments de langage de la campagne sont repris mot pour mot du livret (" + esc(P.source.livret) + ") et du site edouardphilippe.fr.</p>" +
       '<p>' + corr("site", "") + '</p><h2 class="h2">Mises à jour</h2><ul><li>Programme Philippe : revue du ' + fdate(P.source.maj) + "</li>" + A.map(function (a) { return "<li>" + esc(a.nom) + " : revue du " + fdate(a.source.maj) + (a.source.fiches_maj ? ", fiches riposte du " + fdate(a.source.fiches_maj) : "") + "</li>"; }).join("") + "</ul>" +

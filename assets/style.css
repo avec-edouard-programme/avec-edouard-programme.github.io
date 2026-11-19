@@ -135,3 +135,6 @@ details.mes{scroll-margin-top:130px}
 .ml{display:none}
 @media (max-width:640px){.ml{display:inline}}
 .x-phare{color:var(--acc);border-color:var(--acc)}
+.b-analyse-eco{color:#3D5A80}.vbar .b-analyse-eco{background:#8FA3BF}
+.e-continuite{color:var(--mut)}.e-inflexion{color:#3D5A80;border-color:#9DB0CB}.e-rupture{color:#7A3E00;border-color:#D9A66B}
+.box.eco{background:#F4F6FA;border-color:#DCE2EC}
