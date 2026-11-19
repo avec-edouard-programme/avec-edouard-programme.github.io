@@ -228,6 +228,7 @@
       if (t.an.length) h += '<div class="kv">' + vbar(t.an) + '<p>' + vcounts(t.an) + "</p></div>";
       var chg = t.an.filter(function (m) { return m._piste; }).sort(function (a, b) { return (a._sol || 0) - (b._sol || 0); }).slice(0, 6);
       if (chg.length) h += '<h2 class="h2">Ce que nous recommandons de changer</h2><p class="mut">Les mesures les plus fragiles d\'abord ; toutes les fiches sont dans « Mesures de Philippe ».</p><ul class="lst rec">' + chg.map(function (m) { return mlink(m, " " + badge(m._v[0]) + '<p>' + inline(m._piste) + "</p>"); }).join("") + "</ul>";
+      if (t.voir_aussi) h += '<h2 class="h2">' + esc(t.voir_aussi.titre) + '</h2><p class="mut">Mesures rangées dans d\'autres thèmes, qui reposent aussi sur l\'IA.</p><ul class="lst">' + t.voir_aussi.nums.map(function (n) { var m = byNum[n]; return mlink(m, " " + badge(m._v[0]) + ' <span class="mut">· ' + esc(thById[m.theme].court) + "</span>"); }).join("") + "</ul>";
       var ecos = t.mes.filter(function (m) { return m._e; });
       if (ecos.length) {
         var ec = { rupture: 0, inflexion: 0, continuite: 0 }; ecos.forEach(function (m) { if (ec[m._e.ecart] != null) ec[m._e.ecart]++; });
