@@ -83,6 +83,12 @@
   var PLAB = { opposee: "Opposée", partielle: "Désaccord partiel", convergente: "Proche", absente: "Pas de position" };
   var SENS = { forte: "Sensibilité forte", moyenne: "Sensibilité moyenne", faible: "Sensibilité faible" };
   var SLAB = { modifie: "Modifiée depuis le site", precise: "Précisée", nouveau: "Nouvelle (volume 1)", retire: "Retirée" };
+  var viz = function (g) {
+    var mx = Math.max.apply(null, g.valeurs.map(function (x) { return Math.abs(+x.valeur) || 0; })) || 1;
+    return '<figure class="viz"><figcaption>' + esc(g.titre || "") + "</figcaption>" + g.valeurs.map(function (x) {
+      return '<div class="vrow"><span class="vl">' + esc(x.label) + '</span><span class="vb"><i data-w="' + Math.round(100 * Math.abs(+x.valeur) / mx) + '"></i></span><span class="vv">' + esc(String(x.valeur).replace(".", ",")) + " " + esc(x.unite || "") + "</span></div>";
+    }).join("") + '<p class="vs">Sources : ' + esc(g.valeurs.map(function (x) { return x.source; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(" ; ")) + "</p></figure>";
+  };
   var badge = function (v, lab, cls) { return '<span class="badge ' + (cls || "b-") + esc(v) + '">' + esc(lab || VLAB[v] || v) + "</span>"; };
   var PISTE = /(Mieux vaut|La piste sérieuse|Privilégions|Ciblons|Réservons|Conditionnons|Il faut (?:plutôt|le|reprendre)|Je recommande|Préférer|Mieux vaudrait)[^.]*\./;
   var firstSentence = function (s) { var m = String(s || "").replace(/\s+/g, " ").match(/^.+?[.!?](?=\s|$)/); return m ? m[0] : ""; };
@@ -283,9 +289,11 @@
         if (!x.items.length && !x.fiches.length) return;
         h += '<h2 class="h2">' + esc(x.a.nom) + ' <span class="mut">· revue du ' + fdate(x.a.source.maj) + "</span></h2>";
         x.fiches.forEach(function (f) {
-          h += '<details class="mes" id="' + rid(f.titre) + '"><summary><div class="mh"><span class="num">Fiche riposte</span>' + (f.verdict ? badge(f.verdict, f.verdict, "f-") : "") + '</div><div class="mt">' + esc(f.titre) + "</div>" + (f["Ce qui a été dit"] ? '<p class="verd">' + inline(f["Ce qui a été dit"]) + "</p>" : "") + '</summary><div class="mb">' +
+          h += '<details class="mes" id="' + rid(f.titre) + '"><summary><div class="mh"><span class="num">Fiche riposte</span>' + (f.verdict ? badge(f.verdict, f.verdict, "f-") : "") + (f.verdicts ? f.verdicts.map(function (v) { return badge(v); }).join("") : "") + '</div><div class="mt">' + esc(f.titre) + "</div>" + (f["Ce qui a été dit"] ? '<p class="verd">' + inline(f["Ce qui a été dit"]) + "</p>" : "") + '</summary><div class="mb">' +
             (f["Riposte"] ? '<div class="box chg"><h4>Riposte</h4>' + md(f["Riposte"]) + "</div>" : "") +
-            Object.keys(f).filter(function (k) { return ["titre", "verdict", "theme", "Ce qui a été dit", "Riposte"].indexOf(k) < 0; }).map(function (k) { return '<details class="in"><summary>' + esc(k) + "</summary>" + md(f[k]) + "</details>"; }).join("") + "</div></details>";
+            (f.aussi ? '<div class="aussi"><h4>Aussi chez</h4><ul>' + f.aussi.map(function (x) { return "<li><b>" + esc(x.candidat) + "</b> <span class=\"mut\">(" + esc(x.degre || "") + ")</span> " + inline(x.detail || "") + "</li>"; }).join("") + "</ul></div>" : "") +
+            (f.visuel ? viz(f.visuel) : "") +
+            Object.keys(f).filter(function (k) { return ["titre", "verdict", "verdicts", "aussi", "visuel", "theme", "Ce qui a été dit", "Riposte"].indexOf(k) < 0; }).map(function (k) { return '<details class="in"><summary>' + esc(k) + "</summary>" + md(f[k]) + "</details>"; }).join("") + "</div></details>";
         });
         x.items.forEach(function (it) { h += '<details class="mes' + (it.verdicts ? " v-" + it.verdicts[0] : "") + '" id="' + rid(it.titre) + '"><summary>' + (it.verdicts ? '<div class="mh">' + it.verdicts.map(function (v) { return badge(v); }).join("") + "</div>" : "") + '<div class="mt">' + esc(it.titre) + '</div><p class="verd">' + inline(it.justif || firstSentence(it.texte)) + '</p></summary><div class="mb">' + md(it.texte) + "</div></details>"; });
       });
@@ -337,6 +345,7 @@
       var g = t.closest("[data-go]"); if (g) { ev.preventDefault(); $("#gq").value = ""; go(g.getAttribute("data-go"), g.getAttribute("data-sub")); var r = g.getAttribute("data-r") && document.getElementById(g.getAttribute("data-r")); if (r) { r.open = true; r.scrollIntoView({ block: "start" }); } }
     });
     $$("[data-f]").forEach(function (el) { el.style.flex = el.getAttribute("data-f"); });
+    $$("[data-w]").forEach(function (el) { el.style.width = el.getAttribute("data-w") + "%"; });
     var fromHash = function () { var h = location.hash.slice(1).split("/"); go(h[0] || "accueil", h[1]); };
     window.addEventListener("hashchange", fromHash);
     window.addEventListener("popstate", fromHash);

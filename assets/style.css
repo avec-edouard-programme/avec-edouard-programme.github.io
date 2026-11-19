@@ -142,3 +142,13 @@ details.mes{scroll-margin-top:130px}
 .xt td:first-child{min-width:200px}
 .e-pour{color:var(--sol)} .e-plutot_pour{color:var(--dir)} .e-nuance{color:var(--cib)} .e-plutot_contre{color:var(--cal)} .e-contre{color:var(--con)} .cmp td.e-non_connu{color:#B0B4BA}
 .xs{font-size:12.5px;color:var(--mut)}
+
+/* fiches riposte : aussi chez + visuel */
+.aussi h4,.viz figcaption{font-size:.85rem;margin:.6rem 0 .3rem;color:#1F3A5F}
+.aussi ul{margin:.2rem 0 .4rem 1.1rem;padding:0}
+.viz{margin:.6rem 0;padding:.6rem .8rem;background:#f6f8fb;border-radius:6px}
+.vrow{display:grid;grid-template-columns:minmax(8rem,40%) 1fr auto;gap:.5rem;align-items:center;font-size:.82rem;margin:.2rem 0}
+.vb{background:#e3e8ef;border-radius:3px;height:.7rem;overflow:hidden}
+.vb i{display:block;height:100%;background:#1F3A5F}
+.vv{font-variant-numeric:tabular-nums;white-space:nowrap}
+.vs{font-size:.72rem;color:#666;margin:.3rem 0 0}
