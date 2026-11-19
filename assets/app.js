@@ -119,6 +119,8 @@
       var a0 = m.analyses.length ? anal[m.analyses[0]] : null;
       m._piste = a0 ? ((a0.fiche || a0.detail).match(PISTE) || [])[0] || null : null;
     });
+    var PH = C.phares, PHN = {};
+    if (PH) PH.mesures.forEach(function (x) { x.nums.forEach(function (n) { PHN[n] = x; }); });
     var thById = {}; TH.forEach(function (t) {
       thById[t.id] = t;
       t.mes = P.mesures.filter(function (m) { return m.theme === t.id; });
@@ -163,7 +165,7 @@
       return '<p class="pos">' + RIV.map(function (r) { var c = m._att[r.id]; var p = c ? c.position : "absente"; return '<span class="p-' + p + '"><b>' + esc(r.bloc) + "</b> " + esc(PLAB[p]) + "</span>"; }).join("") + "</p>";
     };
     function card(m) {
-      var h = '<details class="mes v-' + m._v[0] + '" id="m' + m.num + '"><summary><div class="mh"><span class="num">N°' + m.num + "</span>" + badge(m._v[0]) + sensB(m) + "</div>" +
+      var h = '<details class="mes v-' + m._v[0] + '" id="m' + m.num + '"><summary><div class="mh"><span class="num">N°' + m.num + "</span>" + badge(m._v[0]) + sensB(m) + (PHN[m.num] ? badge("phare", "Mesure phare jeunes", "x-") : "") + "</div>" +
         '<div class="mt">' + esc(m.titre) + "</div>";
       var one = m.analyses.length ? firstSentence(anal[m.analyses[0]].fiche || anal[m.analyses[0]].detail) : "";
       if (one) h += '<p class="verd">' + inline(one) + "</p>";
@@ -198,6 +200,9 @@
         return '<a class="tile" href="#' + t.id + '" data-go="' + t.id + '"><b>' + esc(t.nom) + '</b><span class="mut">' + (t.an.length ? t.an.length + " sur " + t.mes.length + " mesures analysées" : t.mes.length + " mesures, pas encore analysées") + "</span>" + vbar(t.an) +
           '<span class="mut">' + (ns ? plural(ns, "mesure") + " à sensibilité forte · " : "") + plural(t.nadv, "analyse") + " d'adversaires</span></a>";
       }).join("") + "</div>" +
+      (PH ? '<h2 class="h2">Les 11 mesures phares pour les jeunes</h2><p class="mut">' + esc(PH.source) + ". Chaque mesure renvoie à sa fiche dans le livret.</p><ol class=\"lst\">" + PH.mesures.map(function (x) {
+        return "<li><b>" + esc(x.titre) + "</b><p>" + x.nums.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a> " + (m.analyses.length ? badge(m._v[0]) : '<span class="mut">analyse en cours</span>') + " " + sensB(m); }).join(" · ") + "</p></li>";
+      }).join("") + "</ol>" : "") +
       (fragile.length ? '<h2 class="h2">À corriger en priorité</h2><p class="mut">Fragiles selon nos preuves et les plus exposées aux attaques des adversaires.</p><ol class="lst">' + fragile.slice(0, 6).map(function (m) { return mlink(m, ' <span class="mut">· ' + esc(thById[m.theme].court) + (m._top ? " · attaque " + esc(blocOf(m._top)) : "") + "</span>" + (m._s && m._s.niveau === "forte" ? " " + sensB(m) : "")); }).join("") + "</ol>" : "");
 
     // ---------- pages thème

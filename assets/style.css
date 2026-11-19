@@ -134,3 +134,4 @@ details.mes{scroll-margin-top:130px}
 @media (max-width:640px){.top{position:static}.cmp thead{display:none}.cmp tr{display:block;border-bottom:2px solid var(--line)}.cmp td{display:block;border:0;border-top:1px solid var(--soft)}}
 .ml{display:none}
 @media (max-width:640px){.ml{display:inline}}
+.x-phare{color:var(--acc);border-color:var(--acc)}
