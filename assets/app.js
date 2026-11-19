@@ -243,6 +243,13 @@
       if (t.an.length) h += '<div class="kv">' + vbar(t.an) + '<p>' + vcounts(t.an) + "</p></div>";
       var chg = t.an.filter(function (m) { return m._piste; }).sort(function (a, b) { return (a._sol || 0) - (b._sol || 0); }).slice(0, 6);
       if (chg.length) h += '<h2 class="h2">Ce que nous recommandons de changer</h2><p class="mut">Les mesures les plus fragiles d\'abord ; toutes les fiches sont dans « Mesures de Philippe ».</p><ul class="lst rec">' + chg.map(function (m) { return mlink(m, " " + badge(m._v[0]) + '<p>' + inline(m._piste) + "</p>"); }).join("") + "</ul>";
+      (C.pistes || []).filter(function (x) { return x.theme === t.id; }).forEach(function (x) {
+        h += '<h2 class="h2">' + esc(x.titre) + ' <span class="mut">· proposition du groupe, ' + fdate(x.maj) + "</span></h2>" + (x.en_bref ? md(x.en_bref) : "") +
+          x.items.map(function (it) {
+            return '<details class="mes' + (it.verdicts && it.verdicts[0] ? " v-" + it.verdicts[0] : "") + '"><summary><div class="mh"><span class="num">Piste</span>' + (it.verdicts || []).map(function (v) { return badge(v); }).join("") + '</div><div class="mt">' + esc(it.titre) + '</div>' + (it["Le grief"] ? '<p class="verd">' + inline(it["Le grief"]) + "</p>" : "") + '</summary><div class="mb">' +
+              Object.keys(it).filter(function (k) { return ["titre", "verdicts", "Le grief"].indexOf(k) < 0; }).map(function (k) { return "<h4>" + esc(k) + "</h4>" + md(it[k]); }).join("") + "</div></details>";
+          }).join("");
+      });
       if (t.voir_aussi) h += '<h2 class="h2">' + esc(t.voir_aussi.titre) + '</h2><p class="mut">Mesures rangées dans d\'autres thèmes, qui reposent aussi sur l\'IA.</p><ul class="lst">' + t.voir_aussi.nums.map(function (n) { var m = byNum[n]; return mlink(m, " " + badge(m._v[0]) + ' <span class="mut">· ' + esc(thById[m.theme].court) + "</span>"); }).join("") + "</ul>";
       var ecos = t.mes.filter(function (m) { return m._e; });
       if (ecos.length) {
