@@ -287,7 +287,7 @@
         withAtt.map(function (m) { return '<tr><td><a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) + "</td>" + RIV.map(function (r) { var c = m._att[r.id], p = c ? c.position : "absente"; return '<td class="p-' + p + '"><b class="ml">' + esc(r.bloc) + ' : </b>' + esc(PLAB[p]) + (c && c.proposition && p !== "absente" ? '<span class="mut">' + esc(c.proposition) + "</span>" : "") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
       t.adv.forEach(function (x) {
         if (!x.items.length && !x.fiches.length) return;
-        h += '<h2 class="h2">' + esc(x.a.nom) + ' <span class="mut">· revue du ' + fdate(x.a.source.maj) + "</span></h2>";
+        h += '<h2 class="h2">' + esc(x.a.nom) + ' <span class="mut">· ' + (x.a.source.maj ? "revue du " + fdate(x.a.source.maj) : "fiches riposte du " + fdate(x.a.source.fiches_maj)) + "</span></h2>";
         x.fiches.forEach(function (f) {
           h += '<details class="mes" id="' + rid(f.titre) + '"><summary><div class="mh"><span class="num">Fiche riposte</span>' + (f.verdict ? badge(f.verdict, f.verdict, "f-") : "") + (f.verdicts ? f.verdicts.map(function (v) { return badge(v); }).join("") : "") + '</div><div class="mt">' + esc(f.titre) + "</div>" + (f["Ce qui a été dit"] ? '<p class="verd">' + inline(f["Ce qui a été dit"]) + "</p>" : "") + '</summary><div class="mb">' +
             (f["Riposte"] ? '<div class="box chg"><h4>Riposte</h4>' + md(f["Riposte"]) + "</div>" : "") +
@@ -321,7 +321,7 @@
         (function () { var o = X.questions.filter(function (q) { return !q.onglet; }); return o.length ? '<h3>Autres questions (hors thèmes du site)</h3>' + xtable(o) : ""; })() : "") +
       '<h2 class="h2">Positions des adversaires</h2><p>Pour chaque mesure analysée, la position de chaque adversaire d\'après nos revues de leurs programmes : opposée, désaccord partiel, proche, ou pas de position. Chaque proposition adverse est rangée dans un seul thème.</p>' +
       "<h2 class=\"h2\">Preuves</h2><p>Études causales (françaises d'abord), puis évaluations officielles (Cour des comptes, CAE, Insee, DREES, IPP, OCDE), puis chiffrages (Fipeco, Institut Montaigne). La presse sert de piste, jamais de preuve. Chaque chiffre a été lu dans sa source, sinon il est marqué « à vérifier ». Les mesures et éléments de langage de la campagne sont repris mot pour mot du livret (" + esc(P.source.livret) + ") et du site edouardphilippe.fr.</p>" +
-      '<p>' + corr("site", "") + '</p><h2 class="h2">Mises à jour</h2><ul><li>Programme Philippe : revue du ' + fdate(P.source.maj) + "</li>" + A.map(function (a) { return "<li>" + esc(a.nom) + " : revue du " + fdate(a.source.maj) + (a.source.fiches_maj ? ", fiches riposte du " + fdate(a.source.fiches_maj) : "") + "</li>"; }).join("") + "</ul>" +
+      '<p>' + corr("site", "") + '</p><h2 class="h2">Mises à jour</h2><ul><li>Programme Philippe : revue du ' + fdate(P.source.maj) + "</li>" + A.map(function (a) { return "<li>" + esc(a.nom) + " : " + (a.source.maj ? "revue du " + fdate(a.source.maj) : "pas de revue complète") + (a.source.fiches_maj ? ", fiches riposte du " + fdate(a.source.fiches_maj) : "") + "</li>"; }).join("") + "</ul>" +
       '<details class="in"><summary>Sources de l\'analyse du programme Philippe</summary>' + md(P.sources_md) + "</details></div>";
 
     // ---------- recherche globale
