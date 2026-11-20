@@ -154,3 +154,11 @@ details.mes{scroll-margin-top:130px}
 .vs{font-size:.72rem;color:#666;margin:.3rem 0 0}
 
 .comm li{margin:.5rem 0}.comm .warn{color:#8a5a00;font-size:.85rem;margin:.2rem 0 0}
+/* priorités et préparation (20/11/2026) */
+.pt td{vertical-align:top}.nw{white-space:nowrap}.chg1{margin:4px 0 0;font-size:14.5px;color:#3A4048}
+.kvt td:last-child{text-align:right}.t-non{color:var(--con);font-weight:600}.t-partiel{color:var(--cal);font-weight:600}.t-oui{color:var(--sol);font-weight:600}
+.prop li{margin-bottom:16px}
+.say{margin:0 0 14px;padding:12px 16px;border-left:4px solid var(--acc);background:var(--soft);font-size:18px;line-height:1.55}
+.att{margin:10px 0 2px;font-weight:600}.rep{margin:0 0 8px}.pont{font-size:15.5px}
+.box.warn{border-color:#E9C98A;background:#FFF9EE}
+.drill .dq{font-size:20px;font-weight:600;margin:6px 0}.drill .dt{font-size:28px;font-weight:700;color:var(--acc);min-height:1.3em}

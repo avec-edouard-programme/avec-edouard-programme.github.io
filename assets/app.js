@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
     $("#tabs").innerHTML = NAV.map(function (s) { var t = thById[s[0]]; return '<button class="tab" role="tab" id="t-' + s[0] + '">' + esc(s[1]) + "" + "</button>"; }).join("");
     app.innerHTML = NAV.map(function (s) { return '<section class="panel" role="tabpanel" id="p-' + s[0] + '" hidden></section>'; }).join("") + '<section class="panel" id="p-recherche" hidden></section>';
     var cur = null;
@@ -212,7 +212,7 @@
     $("#p-accueil").innerHTML =
       '<div class="intro"><p class="kick">Mis à jour le ' + fdate(C.genere_le) + " · J-" + days(ELECTION) + " avant le premier tour</p>" +
       "<h1>Le programme d'Édouard Philippe, mesure par mesure, face aux preuves et aux autres programmes</h1>" +
-      '<p class="lead">' + P.mesures.length + " mesures du livret du 18 novembre. " + analysed.length + " sont passées au crible par nos agents de recherche : verdict, preuves, sensibilité politique, ce qu'il faudrait changer, et ce qu'en disent " + A.map(function (a) { return a.nom; }).join(", ").replace(/, ([^,]*)$/, " et $1") + ".</p></div>" +
+      '<p class="lead">' + P.mesures.length + " mesures du livret du 18 novembre. " + analysed.length + " sont passées au crible par nos agents de recherche : verdict, preuves, sensibilité politique, ce qu'il faudrait changer, et ce qu'en disent " + A.map(function (a) { return a.nom; }).join(", ").replace(/, ([^,]*)$/, " et $1") + ".</p>" + (C.priorites ? '<p class="tolinks"><a href="#priorites" data-go="priorites">Priorités : ce qui doit porter la campagne</a> · <a href="#preparation" data-go="preparation">Préparation du candidat : fiches, contre-attaques, entraînement</a></p>' : "") + "</div>" +
       '<h2 class="h2">Par thème</h2><div class="grid">' + TH.map(function (t) {
         var ns = t.mes.filter(function (m) { return m._s && m._s.niveau === "forte"; }).length;
         return '<a class="tile" href="#' + t.id + '" data-go="' + t.id + '"><b>' + esc(t.nom) + '</b><span class="mut">' + (t.an.length ? t.an.length + " sur " + t.mes.length + " mesures analysées" : t.mes.length + " mesures, pas encore analysées") + "</span>" + vbar(t.an) +
@@ -222,6 +222,100 @@
         return "<li><b>" + esc(x.titre) + "</b><p>" + x.nums.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a> " + (m.analyses.length ? badge(m._v[0]) : '<span class="mut">analyse en cours</span>') + " " + sensB(m); }).join(" · ") + "</p></li>";
       }).join("") + "</ol>" : "") +
       (fragile.length ? '<h2 class="h2">À corriger en priorité</h2><p class="mut">Fragiles selon nos preuves et les plus exposées aux attaques des adversaires.</p><ol class="lst">' + fragile.slice(0, 6).map(function (m) { return mlink(m, ' <span class="mut">· ' + esc(thById[m.theme].court) + (m._top ? " · attaque " + esc(blocOf(m._top)) : "") + "</span>" + (m._s && m._s.niveau === "forte" ? " " + sensB(m) : "")); }).join("") + "</ol>" : "");
+
+    // ---------- priorités : les 10 priorités du livret, les phares, notre proposition, filtres
+    var PR = C.priorites, PP = C.preparation;
+    var vOf = function (m) { return m._v[0]; };
+    var isSol = function (m) { return m._v.indexOf("solide") >= 0; };
+    var isBad = function (m) { return m._v.some(function (v) { return /^mal-/.test(v); }); };
+    var mrow = function (m) {
+      return '<tr><td class="nw"><a href="#" data-n="' + m.num + '">N°' + m.num + "</a></td><td><b>" + esc(m.titre) + "</b>" + (m._piste ? '<p class="chg1"><b>À changer :</b> ' + inline(m._piste) + "</p>" : "") + "</td><td>" + m._v.map(function (v) { return badge(v); }).join(" ") + "</td><td>" + sensB(m) + (PHN[m.num] ? " " + badge("phare", "Phare jeunes", "x-") : "") + "</td></tr>";
+    };
+    var mtable = function (list) { return list.length ? '<div class="scroll"><table class="cmp pt"><thead><tr><th>N°</th><th>Mesure</th><th>Verdict</th><th>Sensibilité</th></tr></thead><tbody>' + list.map(mrow).join("") + "</tbody></table></div>" : '<p class="mut">Aucune mesure pour ces filtres.</p>'; };
+    if (PR) {
+      var prioNums = {}, prioMes = [];
+      PR.livret.forEach(function (x) { x.nums.forEach(function (n) { if (!prioNums[n]) { prioNums[n] = x.prio; prioMes.push(byNum[n]); } }); });
+      var gpNums = {}; PR.ecart.concat(PR.proposition).forEach(function (x) { x.nums.forEach(function (n) { gpNums[n] = 1; }); });
+      var solHors = P.mesures.filter(function (m) { return isSol(m) && !prioNums[m.num]; });
+      var phOverlap = PH ? PH.mesures.filter(function (x) { return x.nums.some(function (n) { return prioNums[n]; }); }).length : 0;
+      var kv = function (k, v) { return "<tr><td>" + k + "</td><td><b>" + v + "</b></td></tr>"; };
+      var LISTS = { livret: ["Les 10 priorités du livret", prioMes], proposition: ["Notre proposition", []], phares: ["Phares jeunes", []], toutes: ["Les " + P.mesures.length + " mesures", P.mesures] };
+      PR.proposition.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.proposition[1].indexOf(byNum[n]) < 0) LISTS.proposition[1].push(byNum[n]); }); });
+      if (PH) PH.mesures.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.phares[1].indexOf(byNum[n]) < 0) LISTS.phares[1].push(byNum[n]); }); });
+      var pst = { l: "livret", v: null, s: null, gp: false };
+      var h = '<div class="thead"><h1>Priorités : ce qui doit porter la campagne</h1><p class="mut">Le livret compte ' + P.mesures.length + " mesures. Lesquelles mettre en avant, lesquelles corriger, lesquelles défendre.</p></div>" +
+        '<h2 class="h2">Le constat : un programme sans hiérarchie</h2><div class="scroll"><table class="cmp kvt"><tbody>' +
+        kv("Mesures dans le livret", P.mesures.length) +
+        kv("Mesures regroupées dans les 10 priorités du livret", prioMes.length) +
+        kv("Dont jugées bien fondées par notre revue", prioMes.filter(isSol).length + " (" + prioMes.filter(isSol).map(function (m) { return "N°" + m.num; }).join(", ") + ")") +
+        kv("Dont avec un défaut de calibrage, de ciblage ou de conception", prioMes.filter(isBad).length) +
+        kv("Dont à sensibilité politique forte", prioMes.filter(function (m) { return m._s && m._s.niveau === "forte"; }).length) +
+        (PH ? kv("Phares jeunes (19/11) qui recoupent les 10 priorités", phOverlap + " sur " + PH.mesures.length) : "") +
+        kv("Mesures bien fondées absentes des priorités", solHors.length) +
+        "</tbody></table></div>" +
+        '<p class="mut">Mesures bien fondées hors priorités : ' + solHors.map(function (m) { return '<a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre.replace(/\.$/, "")); }).join(" · ") + ".</p>" +
+        '<h2 class="h2">La ligne : ' + esc(PR.ligne.titre) + '</h2><p>' + esc(PR.ligne.texte) + ' <span class="mut">(' + esc(PR.ligne.source) + ")</span></p>" +
+        '<div class="scroll"><table class="cmp"><thead><tr><th>Thème</th><th>Dans les 10 priorités ?</th><th>Constat</th></tr></thead><tbody>' + PR.ecart.map(function (e) {
+          return "<tr><td><b>" + esc(e.theme) + "</b><br>" + e.nums.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(" ") + '</td><td class="t-' + e.top10 + '">' + esc({ oui: "Oui", non: "Non", partiel: "En partie" }[e.top10]) + "</td><td>" + esc(e.note) + "</td></tr>";
+        }).join("") + "</tbody></table></div>" +
+        '<h2 class="h2">Notre proposition de priorités</h2><p class="mut">Proposition du groupe, à discuter avec l\'équipe. Chaque priorité s\'appuie sur des mesures du livret, avec la correction à apporter.</p><ol class="lst prop">' + PR.proposition.map(function (x) {
+          return "<li><b>" + esc(x.titre) + "</b>" + (x.phare ? " " + badge("phare", "Mesure phare", "x-") : "") + "<p>" + esc(x.pourquoi) + "</p><p><b>À corriger :</b> " + esc(x.corriger) + "</p><p>" + x.nums.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a> " + badge(vOf(m)); }).join(" · ") + "</p></li>";
+        }).join("") + '</ol><p class="mut">' + esc(PR.garder_en_defense) + "</p>" +
+        '<h2 class="h2">Filtrer les mesures</h2><div class="filters" id="pf-l">' + Object.keys(LISTS).map(function (k) { return '<button class="chip" data-l="' + k + '">' + esc(LISTS[k][0]) + ' <span class="tn">' + LISTS[k][1].length + "</span></button>"; }).join("") + "</div>" +
+        '<div class="filters" id="pf-v"><span class="mut">Verdict :</span>' + VORD.concat(["non-analysee"]).map(function (v) { return '<button class="chip" data-v="' + v + '">' + esc(VLAB[v]) + "</button>"; }).join("") + "</div>" +
+        '<div class="filters" id="pf-s"><span class="mut">Sensibilité :</span>' + ["forte", "moyenne", "faible"].map(function (s) { return '<button class="chip" data-s="' + s + '">' + s + "</button>"; }).join("") + '<button class="chip" id="pf-gp">France grande puissance</button></div><div id="pf-out"></div>';
+      $("#p-priorites").innerHTML = h;
+      var prender = function () {
+        $$("#pf-l .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-l") === pst.l); });
+        $$("#pf-v .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-v") === pst.v); });
+        $$("#pf-s .chip[data-s]").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-s") === pst.s); });
+        $("#pf-gp").setAttribute("aria-pressed", pst.gp);
+        var L = LISTS[pst.l][1].filter(function (m) { return (!pst.v || m._v.indexOf(pst.v) >= 0) && (!pst.s || (m._s && m._s.niveau === pst.s)) && (!pst.gp || gpNums[m.num]); });
+        $("#pf-out").innerHTML = '<p class="mut">' + plural(L.length, "mesure") + "</p>" + mtable(L);
+      };
+      $$("#pf-l .chip").forEach(function (b) { b.addEventListener("click", function () { pst.l = b.getAttribute("data-l"); prender(); }); });
+      $$("#pf-v .chip").forEach(function (b) { b.addEventListener("click", function () { var v = b.getAttribute("data-v"); pst.v = pst.v === v ? null : v; prender(); }); });
+      $$("#pf-s .chip[data-s]").forEach(function (b) { b.addEventListener("click", function () { var v = b.getAttribute("data-s"); pst.s = pst.s === v ? null : v; prender(); }); });
+      $("#pf-gp").addEventListener("click", function () { pst.gp = !pst.gp; prender(); });
+      prender();
+    } else $("#p-priorites").innerHTML = '<p class="mut">Priorités à venir.</p>';
+
+    // ---------- préparation : fiches orales, contre-attaques, entraînement
+    if (PP) {
+      var ph = '<div class="thead"><h1>Préparation</h1><p class="mut">Pour chaque priorité : la phrase de 30 secondes, les chiffres qui tiennent, les attaques probables et la réplique, ce que nous assumons et corrigeons, et le lien avec la France grande puissance. ' + esc(PP.redaction) + ".</p></div>" +
+        '<nav class="subtabs" id="pp-sub"><button data-m="fiches">Fiches</button><button data-m="contre">Contre-attaques</button><button data-m="drill">Entraînement</button></nav>' +
+        '<div data-pm="fiches">' + '<div class="box warn"><h4>Pièges à éviter</h4><ul>' + PP.pieges.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>" +
+        PP.cartes.map(function (c) {
+          return '<details class="mes prep" id="pc-' + esc(c.id) + '"' + (c.phare ? " open" : "") + '><summary><div class="mh">' + (c.phare ? badge("phare", "Mesure phare", "x-") : "") + c.nums.map(function (n) { return badge(vOf(byNum[n]), "N°" + n + " " + VLAB[vOf(byNum[n])]); }).join("") + '</div><div class="mt">' + esc(c.titre) + "</div></summary><div class=\"mb\">" +
+            '<blockquote class="say">' + esc(c.phrase) + "</blockquote>" +
+            '<div class="box"><h4>Les chiffres qui tiennent</h4><ul>' + c.chiffres.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>" +
+            '<div class="box"><h4>Attaques probables et répliques</h4>' + c.attaques.map(function (a) { return '<p class="att">' + esc(a.attaque) + '</p><p class="rep">' + esc(a.replique) + "</p>"; }).join("") + "</div>" +
+            '<div class="box chg"><h4>Ce que j\'assume et corrige</h4><p>' + esc(c.assume) + "</p></div>" +
+            '<p class="pont"><b>France grande puissance :</b> ' + esc(c.pont) + "</p>" +
+            '<p class="mut">Fiches : ' + c.nums.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + " " + esc(byNum[n].titre.replace(/\.$/, "")) + "</a>"; }).join(" · ") + "</p></div></details>";
+        }).join("") + "</div>" +
+        '<div data-pm="contre"><p class="mut">Démonter un chiffre adverse, puis revenir à notre projet. Le détail et les sources sont dans les fiches riposte de chaque thème.</p>' + PP.contre.map(function (c) {
+          return '<div class="box"><h4>' + esc(c.adversaire) + " · " + esc(c.titre) + "</h4><p>" + esc(c.coup) + "</p>" + (c.piege ? '<p class="mut">' + esc(c.piege) + "</p>" : "") + "</div>";
+        }).join("") + "</div>" +
+        '<div data-pm="drill"><p class="mut">Une attaque tirée au hasard. Répondez à voix haute en 30 secondes, puis comparez avec la réplique préparée.</p><div class="box drill"><p class="kick" id="dr-k"></p><p class="dq" id="dr-q"></p><p class="dt" id="dr-t"></p><div class="filters"><button class="chip" id="dr-go">Démarrer 30 s</button><button class="chip" id="dr-show">Voir la réplique</button><button class="chip" id="dr-next">Suivante</button></div><div id="dr-a" hidden></div></div></div>';
+      $("#p-preparation").innerHTML = ph;
+      var pmode = function (m) { $$("#pp-sub button").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-m") === m); }); $$("#p-preparation [data-pm]").forEach(function (d) { d.hidden = d.getAttribute("data-pm") !== m; }); };
+      $$("#pp-sub button").forEach(function (b) { b.addEventListener("click", function () { pmode(b.getAttribute("data-m")); }); });
+      pmode("fiches");
+      var DQ = [];
+      PP.cartes.forEach(function (c) { c.attaques.forEach(function (a) { DQ.push({ k: c.titre, q: a.attaque, a: a.replique, x: c.pont }); }); });
+      PP.contre.forEach(function (c) { DQ.push({ k: "Contre-attaque · " + c.adversaire, q: "Démontez : " + c.titre, a: c.coup }); });
+      var di = -1, tm = null;
+      var dnext = function () {
+        clearInterval(tm); var j; do { j = Math.floor(Math.random() * DQ.length); } while (DQ.length > 1 && j === di); di = j;
+        var d = DQ[di]; $("#dr-k").textContent = d.k; $("#dr-q").textContent = d.q; $("#dr-t").textContent = ""; $("#dr-a").hidden = true;
+        $("#dr-a").innerHTML = '<p class="rep">' + esc(d.a) + "</p>" + (d.x ? '<p class="pont"><b>Puis :</b> ' + esc(d.x) + "</p>" : "");
+      };
+      $("#dr-next").addEventListener("click", dnext);
+      $("#dr-show").addEventListener("click", function () { clearInterval(tm); $("#dr-a").hidden = false; });
+      $("#dr-go").addEventListener("click", function () { var t = 30; clearInterval(tm); $("#dr-t").textContent = t + " s"; tm = setInterval(function () { t--; $("#dr-t").textContent = t > 0 ? t + " s" : "Temps écoulé"; if (t <= 0) { clearInterval(tm); $("#dr-a").hidden = false; } }, 1000); });
+      dnext();
+    } else $("#p-preparation").innerHTML = '<p class="mut">Préparation à venir.</p>';
 
     // ---------- pages thème
     var SUBS = [["synthese", "Synthèse"], ["mesures", "Mesures de Philippe"], ["adversaires", "Face aux adversaires"]];
