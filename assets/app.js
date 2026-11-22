@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -383,6 +383,19 @@
       $("#dr-go").addEventListener("click", function () { var t = 30; clearInterval(tm); $("#dr-t").textContent = t + " s"; tm = setInterval(function () { t--; $("#dr-t").textContent = t > 0 ? t + " s" : "Temps écoulé"; if (t <= 0) { clearInterval(tm); $("#dr-a").hidden = false; } }, 1000); });
       dnext();
     } else $("#p-preparation").innerHTML = '<p class="mut">Préparation à venir.</p>';
+
+    // ---------- Membres : une page par collaborateur (profil, objectifs, notes), éditée sur GitHub
+    try {
+      var MB = C.membres;
+      if (MB && MB.length) {
+        $("#p-membres").innerHTML = '<div class="thead"><h1>Membres du groupe</h1><p class="mut">Une page par membre : rôle, objectifs, échéances et notes. Chacun modifie sa page sur GitHub (dépôt privé « notes-membres », dossier à son nom) ; après validation, le site se met à jour le lendemain à 7 h 30. Profils pré-remplis à partir de Slack, à corriger par chacun.</p></div>' +
+          '<p class="filters">' + MB.map(function (m) { return '<a class="chip" href="#" data-mb="' + esc(m.slug) + '">' + esc(m.nom) + (m.notes.length ? " (" + m.notes.length + ")" : "") + "</a>"; }).join("") + "</p>" +
+          MB.map(function (m) { return '<details class="mes" id="mb-' + esc(m.slug) + '"><summary><div class="mh">' + (m.notes.length ? badge("x", m.notes.length + " note(s)", "x-") : badge("x", "pas encore de note", "x-")) + '</div><div class="mt">' + esc(m.nom) + ' <span class="mut">· ' + esc(m.role) + '</span></div></summary><div class="mb"><div class="box"><h4>Objectifs</h4><ul>' + m.objectifs.map(function (o) { return "<li>" + esc(o) + "</li>"; }).join("") + "</ul>" + (m.echeances.length ? "<p><b>Échéances :</b> " + esc(m.echeances.join(" ; ")) + "</p>" : "") + (m.canaux.length ? '<p class="mut">Slack : ' + esc(m.canaux.join(", ")) + "</p>" : "") + "</div>" +
+            m.notes.map(function (n) { return '<details class="in"><summary>' + esc(n.titre) + ' <span class="mut">· ' + esc(fdate(n.maj)) + "</span></summary>" + md(n.texte) + cbox("membre-" + m.slug + "-" + n.fichier, m.nom + " · " + n.titre, n.titre) + "</details>"; }).join("") + "</div></details>"; }).join("") +
+          '<div class="box"><h4>Comment contribuer</h4><ol><li>Créez un compte GitHub et envoyez votre identifiant à Adrien.</li><li>Une fois invité, ouvrez le dépôt « notes-membres » sur github.com, puis votre dossier.</li><li>Pour modifier votre profil ou ajouter une note (dans <code>notes/</code>, un fichier <code>AAAA-MM-JJ-sujet.md</code>), utilisez le crayon ou « Add file », puis proposez la modification (« pull request »).</li><li>Adrien relit et fusionne ; la page se met à jour le lendemain matin.</li></ol></div>';
+        $$("#p-membres [data-mb]").forEach(function (x) { x.addEventListener("click", function (ev) { ev.preventDefault(); var el = $("#mb-" + x.getAttribute("data-mb")); if (el) { el.open = true; el.scrollIntoView({ block: "start" }); } }); });
+      } else $("#p-membres").innerHTML = '<p class="mut">À venir.</p>';
+    } catch (e) { console.error("[site] membres", e); }
 
     // ---------- Un État qui marche : pourquoi c'est si dur de faire en France, et comment en sortir
     try {
