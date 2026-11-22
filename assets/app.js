@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["midterms", "Midterms"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
     $("#tabs").innerHTML = NAV.map(function (s) { var t = thById[s[0]]; return '<button class="tab" role="tab" id="t-' + s[0] + '">' + esc(s[1]) + "" + "</button>"; }).join("");
     app.innerHTML = NAV.map(function (s) { return '<section class="panel" role="tabpanel" id="p-' + s[0] + '" hidden></section>'; }).join("") + '<section class="panel" id="p-recherche" hidden></section>';
     var cur = null;
@@ -213,6 +213,10 @@
       '<div class="intro"><p class="kick">Mis à jour le ' + fdate(C.genere_le) + " · J-" + days(ELECTION) + " avant le premier tour</p>" +
       "<h1>Le programme d'Édouard Philippe, mesure par mesure, face aux preuves et aux autres programmes</h1>" +
       '<p class="lead">' + P.mesures.length + " mesures du livret du 18 novembre. " + analysed.length + " sont passées au crible par nos agents de recherche : verdict, preuves, sensibilité politique, ce qu'il faudrait changer, et ce qu'en disent " + A.map(function (a) { return a.nom; }).join(", ").replace(/, ([^,]*)$/, " et $1") + ".</p>" + (C.priorites ? '<p class="tolinks"><a href="#priorites" data-go="priorites">Priorités : ce qui doit porter la campagne</a> · <a href="#preparation" data-go="preparation">Préparation du candidat : fiches, contre-attaques, entraînement</a></p>' : "") + "</div>" +
+      (C.electeurs ? '<p class="tolinks"><a href="#electeurs" data-go="electeurs">Électeurs simulés : ' + (C.electeurs.personas || []).length + ' électeurs fictifs lisent le livret (simulation, pas un sondage)</a> · <a href="#midterms" data-go="midterms">Midterms 2026 : ce qui se transpose en France</a></p>' : "") +
+      (C.notes_ext && C.notes_ext.notes.length ? '<h2 class="h2">Notes et commentaires reçus</h2><p class="mut">Relevés chaque matin (FIPECO et liens déposés par le groupe), puis lus et rattachés aux mesures.</p>' + C.notes_ext.notes.slice(0, 6).map(function (x) {
+        return '<div class="box"><h4>' + (x.url ? '<a href="' + esc(encodeURI(decodeURI(x.url))) + '" target="_blank" rel="noopener">' + esc(x.titre) + "</a>" : esc(x.titre)) + "</h4><p class=\"mut\">" + esc([x.auteur, x.source, fdate(x.date)].filter(Boolean).join(" · ")) + " · " + esc(x.statut) + "</p>" + (x.resume ? "<p>" + esc(x.resume) + "</p>" : "") + (x.chiffres ? "<ul>" + x.chiffres.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ul>" : "") + (x.ce_que_ca_change ? '<p class="rep"><b>Ce que cela change pour nous :</b> ' + esc(x.ce_que_ca_change) + "</p>" : "") + ((x.mesures_liees || []).length ? '<p class="mut">Mesures : ' + x.mesures_liees.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") + "</div>";
+      }).join("") : "") +
       '<h2 class="h2">Par thème</h2><div class="grid">' + TH.map(function (t) {
         var ns = t.mes.filter(function (m) { return m._s && m._s.niveau === "forte"; }).length;
         return '<a class="tile" href="#' + t.id + '" data-go="' + t.id + '"><b>' + esc(t.nom) + '</b><span class="mut">' + (t.an.length ? t.an.length + " sur " + t.mes.length + " mesures analysées" : t.mes.length + " mesures, pas encore analysées") + "</span>" + vbar(t.an) +
@@ -344,6 +348,85 @@
       dnext();
     } else $("#p-preparation").innerHTML = '<p class="mut">Préparation à venir.</p>';
 
+    // ---------- électeurs simulés (personas/ : kit reproductible, simulations, boucle)
+    try {
+    var EL = C.electeurs;
+    if (EL && EL.personas) {
+      var PS = EL.personas.filter(function (p) { return EL.sims[p.id]; });
+      var RNOM = { lisnard: "David Lisnard", lepen: "Marine Le Pen", melenchon: "Jean-Luc Mélenchon" };
+      var rx = function (v) { return '<span class="hx h' + (v < 0 ? "m" : "p") + Math.abs(v) + '">' + (v > 0 ? "+" : "") + v + "</span>"; };
+      var simOf = function (p, n) { var s = EL.sims[p.id]; return (s.mesures || []).filter(function (m) { return m.num === n; })[0]; };
+      var avg = function (p) { var m = EL.sims[p.id].mesures; return m.reduce(function (a, x) { return a + x.reaction; }, 0) / m.length; };
+      var titreC = function (n) { return byNum[n] ? byNum[n].titre.replace(/\.$/, "") : "N°" + n; };
+      var eh = '<div class="thead"><h1>Électeurs simulés</h1><p class="mut"><b>Simulation, pas un sondage.</b> ' + EL.personas.length + ' électeurs fictifs, au moins un par public des fiches « Ce qui changerait pour… », nourris du porte-à-porte et d\'entretiens qualitatifs, lisent le livret mesure par mesure : ce qui les touche, ce qui les repousse, ce que leur candidat préféré leur offre, et ce que personne ne leur dit. C\'est un test de résistance du programme, pas une mesure de l\'opinion.</p></div>' +
+        '<nav class="subtabs" id="el-sub"><button data-m="chantiers">Par chantier</button><button data-m="carte">Mesure par mesure</button><button data-m="personas">Les électeurs</button><button data-m="boucle">Ce qui change dans le programme</button><button data-m="kit">Reproduire la méthode</button></nav>';
+      // carte de chaleur : personas × mesures communes
+      eh += '<div data-em="carte"><p class="mut">Réaction de chaque électeur aux ' + EL.mesures_communes.length + ' mesures communes, de -2 (rejet net) à +2 (adhésion). Survolez une case pour lire sa phrase.</p><div class="hwrap"><table class="heat"><thead><tr><th></th>' +
+        EL.mesures_communes.map(function (n) { return '<th title="' + esc(titreC(n)) + '"><a href="#" data-n="' + n + '">N°' + n + "</a><small>" + esc(titreC(n).slice(0, 38)) + "</small></th>"; }).join("") + "<th>Moyenne (16 mesures)</th></tr></thead><tbody>" +
+        PS.map(function (p) {
+          return "<tr><th>" + esc(p.libelle) + "<small>" + p.age + " ans · " + esc(p.intention_t1) + "</small></th>" + EL.mesures_communes.map(function (n) { var m = simOf(p, n); return m ? '<td title="' + esc(p.libelle + " : « " + m.verbatim + " »") + '">' + rx(m.reaction) + "</td>" : "<td></td>"; }).join("") + "<td><b>" + (avg(p) > 0 ? "+" : "") + avg(p).toFixed(2) + "</b></td></tr>";
+        }).join("") + "</tbody><tfoot><tr><th>Moyenne</th>" + EL.mesures_communes.map(function (n) { var v = PS.map(function (p) { var m = simOf(p, n); return m ? m.reaction : 0; }); var a = v.reduce(function (x, y) { return x + y; }, 0) / v.length; return "<td><b>" + (a > 0 ? "+" : "") + a.toFixed(1) + "</b></td>"; }).join("") + "<td></td></tr></tfoot></table></div>" +
+        '<div class="pgrid">' + PS.map(function (p) { var b = EL.sims[p.id].bascule || {}; return '<div class="box"><h4>' + esc(p.libelle) + " · vote Philippe au 1er tour : " + esc(b.probabilite_vote_philippe_t1 || "?") + '</h4><p class="rep">« ' + esc(b.phrase_qui_marche || "") + ' »</p><p class="att">' + esc(b.phrase_qui_repousse || "") + '</p><p class="mut"><b>Condition :</b> ' + esc(b.condition || "") + "</p></div>"; }).join("") + "</div></div>";
+      // carte par chantier : personas × 12 chantiers (out/chantiers-*.json)
+      var CA = EL.chantiers_avis || {}, CH = EL.chantiers || [], PSC = EL.personas.filter(function (p) { return CA[p.id]; });
+      var avOf = function (p, cid) { return (CA[p.id].chantiers || []).filter(function (c) { return c.id === cid; })[0]; };
+      eh += '<div data-em="chantiers">' + (PSC.length ? '<p class="mut">Ce que chaque électeur pense de chaque grand chantier du programme, de -2 (rejet) à +2 (adhésion), à partir des doléances réelles et sourcées de son groupe. Cliquez sur une case pour lire son avis, les doléances qu\'il invoque et ce qui manque.</p><div class="hwrap"><table class="heat big"><thead><tr><th></th>' +
+        CH.map(function (c) { return "<th>" + esc(c.nom) + "<small>" + (c.mesures.length ? c.mesures.length + " mesures" : "aucune mesure") + "</small></th>"; }).join("") + "</tr></thead><tbody>" +
+        PSC.map(function (p) { return "<tr><th>" + esc(p.libelle) + "</th>" + CH.map(function (c) { var a = avOf(p, c.id); return a ? '<td class="ck" data-p="' + p.id + '" data-c="' + c.id + '" title="' + esc(a.verbatim) + '">' + rx(a.note) + "</td>" : "<td></td>"; }).join("") + "</tr>"; }).join("") +
+        "</tbody><tfoot><tr><th>Moyenne</th>" + CH.map(function (c) { var v = PSC.map(function (p) { var a = avOf(p, c.id); return a ? a.note : null; }).filter(function (x) { return x !== null; }); var m = v.length ? v.reduce(function (x, y) { return x + y; }, 0) / v.length : 0; return "<td><b>" + (m > 0 ? "+" : "") + m.toFixed(1) + "</b></td>"; }).join("") + '</tr></tfoot></table></div><div id="ck-out" class="box"><p class="mut">Cliquez sur une case.</p></div>' : '<p class="mut">Avis par chantier en cours de calcul.</p>') + "</div>";
+      var docOf = function (p) { var d = (CA[p.id] || {}).doleances || []; if (!d.length) return ""; return '<div class="box"><h4>Doléances documentées de son groupe</h4><ol>' + d.map(function (x) { return "<li><b>" + esc(x.doleance) + "</b> " + esc(x.fait) + ' <span class="mut">(' + (/^https?:/.test(x.url || "") ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.source) + "</a>" : esc(x.source)) + ")</span></li>"; }).join("") + "</ol></div>"; };
+      // fiches personas
+      eh += '<div data-em="personas">' + PS.map(function (p) {
+        var s = EL.sims[p.id], cp = s.candidat_prefere || {}, voix = (EL.voix || {})[p.id];
+        var ms = s.mesures.slice().sort(function (a, b) { return b.reaction - a.reaction; });
+        return '<details class="mes prep" id="el-' + p.id + '"><summary><div class="mh">' + rx(Math.round(avg(p))) + badge("x", esc(RNOM[p.candidat_prefere] || p.intention_t1), "x-") + '</div><div class="mt">' + esc(p.libelle) + " · " + p.age + " ans, " + esc(p.lieu) + "</div></summary><div class=\"mb\">" +
+          '<p class="mut"><b>Public des fiches :</b> ' + esc(p.categorie_fiche || "") + "</p><p>" + esc(p.situation) + " " + esc(p.vote_passe) + ' <b>Intention :</b> ' + esc(p.intention_t1) + ".</p>" +
+          '<p class="mut"><b>Ce qui l\'occupe :</b> ' + esc(p.preoccupations.join(" ; ")) + ". <b>S'informe :</b> " + esc(p.sources_info) + "</p>" +
+          '<p class="filters">' + (voix ? '<a class="chip" href="' + esc(voix) + '" target="_blank" rel="noopener">Lui parler (voix, simulation)</a>' : '<span class="chip off">Voix : bientôt</span>') + "</p>" +
+          docOf(p) + '<div class="box"><h4>Débat simulé avec un porte-parole</h4>' + (s.debat || []).map(function (t) { return '<p class="' + (t.qui === "persona" ? "att" : "rep") + '"><b>' + (t.qui === "persona" ? "L'électeur" : "Porte-parole") + " :</b> " + esc(t.texte) + "</p>"; }).join("") + "</div>" +
+          '<div class="box"><h4>Les 16 mesures, de la plus aimée à la plus rejetée</h4><table class="mtab"><tbody>' + ms.map(function (m) { return "<tr><td>" + rx(m.reaction) + '</td><td><a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(titreC(m.num)) + '<br><i>« ' + esc(m.verbatim) + " »</i>" + (m.reaction < 1 && m.ce_qui_convaincrait ? '<br><span class="mut"><b>Ce qui le ferait bouger :</b> ' + esc(m.ce_qui_convaincrait) + "</span>" : "") + (m.reformulation ? '<br><span class="mut"><b>Mieux dit :</b> ' + esc(m.reformulation) + "</span>" : "") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+          '<div class="box"><h4>Ce que lui offre ' + esc(RNOM[cp.id] || "son candidat") + "</h4><ul>" + (cp.ce_qui_seduit || []).map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" + ((cp.ce_qui_l_inquiete || []).length ? '<p class="mut"><b>Ce qui l\'inquiète chez lui :</b> ' + esc(cp.ce_qui_l_inquiete.join(" ; ")) + "</p>" : "") + "</div>" +
+          '<div class="box chg"><h4>Angles morts : là où Philippe peut entrer</h4>' + (s.angles_morts || []).map(function (a) { return "<p><b>" + esc(a.sujet) + ".</b> Son candidat : " + esc(a.ce_que_dit_son_candidat) + ". <b>Angle :</b> " + esc(a.angle_pour_philippe) + ((a.mesures_livret || []).length ? " (" + a.mesures_livret.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + ")" : "") + "</p>"; }).join("") + "</div></div></details>";
+      }).join("") + "</div>";
+      // boucle
+      var BO = EL.boucle, EV = {}; ((EL.eval_philippe || {}).evaluations || []).forEach(function (e) { EV[e.id] = e; });
+      var evOf = function (id) { var e = EV[id]; if (!e) return ""; return '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>"; };
+      eh += '<div data-em="boucle">' + (BO ? '<p class="mut">' + esc(BO.intro) + (EL.eval_philippe ? " Chaque proposition passe ensuite un dernier filtre : un évaluateur simulé, inspiré du profil public du candidat, qui juge les preuves, le coût, l'effet sur la croissance et la cohérence avec une France qui compte dans le monde. Il ne parle pas au nom du candidat." : "") + "</p>" + (BO.propositions || []).map(function (x) {
+        return '<div class="box"><h4>' + (x.nums || []).map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + " · " + esc(x.titre) + '</h4><p><b>Ce que disent les électeurs simulés :</b> ' + esc(x.constat) + '</p><p class="rep"><b>Proposition (à valider) :</b> ' + esc(x.proposition) + "</p>" + (x.type ? '<p class="mut">' + esc(x.type) + "</p>" : "") + evOf(x.id) + "</div>";
+      }).join("") : '<p class="mut">Synthèse à venir.</p>') + "</div>";
+      // kit
+      var KF = (EL.kit || {}).fichiers || [];
+      eh += '<div data-em="kit"><div class="box"><h4>Refaire l\'exercice en 15 minutes</h4><ol>' +
+        "<li>Téléchargez le kit (zip) ci-dessous : " + EL.personas.length + " fiches d'électeurs, le prompt, les 142 mesures du livret et les programmes Lisnard, Le Pen et Mélenchon.</li>" +
+        "<li><b>Sans code :</b> ouvrez Claude, ChatGPT, Le Chat ou Gemini, collez <code>prompts/simulation.md</code>, puis la fiche d'un électeur, ses 16 mesures et le programme de son candidat. La réponse est un fichier JSON au format du site.</li>" +
+        "<li><b>Avec Python :</b> <code>pip install anthropic</code>, puis <code>python3 simulate.py</code> relance tous les électeurs (<code>--prompt-only</code> écrit seulement les prompts complets à coller).</li>" +
+        "<li>Changez une fiche, ajoutez un électeur ou remplacez une mesure par sa nouvelle formulation, puis relancez : vous voyez si la réaction change. C'est la boucle écouter, décider, agir, réinjecter.</li></ol>" +
+        '<p class="filters">' + (EL.kit && EL.kit.zip ? '<button class="chip" id="kit-zip">Télécharger le kit complet (zip)</button>' : "") + KF.map(function (f, i) { return '<button class="chip" data-kf="' + i + '">' + esc(f.nom) + "</button>"; }).join("") + "</p></div>" +
+        '<p class="mut">Garde-fous : électeurs fictifs, aucune donnée personnelle ; le modèle peut se tromper sur un électorat ; les programmes Lisnard, Le Pen et Mélenchon fournis aux électeurs sont nos revues de leur volet économique (sécurité et justice non couvertes) ; les résultats orientent les questions à poser au terrain, ils ne remplacent ni le porte-à-porte ni les sondages.</p></div>';
+      $("#p-electeurs").innerHTML = eh;
+      var emode = function (m) { $$("#el-sub button").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-m") === m); }); $$("#p-electeurs [data-em]").forEach(function (d) { d.hidden = d.getAttribute("data-em") !== m; }); };
+      $$("#el-sub button").forEach(function (b) { b.addEventListener("click", function () { emode(b.getAttribute("data-m")); }); });
+      emode(PSC.length ? "chantiers" : "carte");
+      $$("#p-electeurs td.ck").forEach(function (td) { td.addEventListener("click", function () {
+        var p = EL.personas.filter(function (x) { return x.id === td.getAttribute("data-p"); })[0], c = CH.filter(function (x) { return x.id === td.getAttribute("data-c"); })[0], a = avOf(p, c.id), d = CA[p.id].doleances || [];
+        $("#ck-out").innerHTML = "<h4>" + esc(p.libelle) + " · " + esc(c.nom) + " " + rx(a.note) + '</h4><p class="att">« ' + esc(a.verbatim) + " »</p><p><b>Répond à ses doléances :</b> " + esc(a.repond) + (a.manque ? ". <b>Ce qui manque :</b> " + esc(a.manque) : "") + "</p>" + ((a.doleances || []).length ? "<ul>" + a.doleances.map(function (n) { var x = d.filter(function (y) { return y.n === n; })[0]; return x ? "<li>" + esc(x.doleance) + " " + esc(x.fait) + ' <span class="mut">(' + (/^https?:/.test(x.url || "") ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.source) + "</a>" : esc(x.source)) + ")</span></li>" : ""; }).join("") + "</ul>" : "") + (c.mesures.length ? '<p class="mut">Mesures du chantier : ' + c.mesures.map(function (m) { return '<a href="#" data-n="' + m.num + '">N°' + m.num + "</a>"; }).join(", ") + "</p>" : '<p class="mut">' + esc(c.note || "") + "</p>");
+      }); });
+      var dl = function (name, blob) { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); };
+      $$("#p-electeurs [data-kf]").forEach(function (b) { b.addEventListener("click", function () { var f = KF[+b.getAttribute("data-kf")]; dl(f.nom.split("/").pop(), new Blob([f.contenu], { type: "text/plain;charset=utf-8" })); }); });
+      if ($("#kit-zip")) $("#kit-zip").addEventListener("click", function () { var s = atob(EL.kit.zip), u = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); dl("kit-electeurs-simules.zip", new Blob([u], { type: "application/zip" })); });
+    } else $("#p-electeurs").innerHTML = '<p class="mut">Électeurs simulés à venir.</p>';
+
+    // ---------- Midterms 2026 : la présentation
+    var MT = C.midterms;
+    if (MT && MT.length) {
+      $("#p-midterms").innerHTML = '<div class="thead"><h1>Midterms 2026 : ce qui se transpose en France</h1><p class="mut">Présentation du groupe (17 novembre 2026), complétée le 22 novembre par les électeurs simulés et la campagne qui apprend. ' + MT.length + " diapositives.</p></div>" +
+        MT.map(function (d, i) {
+          return '<section class="slide"><p class="kick">' + (i + 1) + " · " + esc(d.surtitre || "") + "</p><h2>" + esc(d.titre || "") + '</h2><p class="lead">' + esc(d.chapeau || "") + '</p><div class="sgrid">' + d.blocs.map(function (b) { return '<div class="box"><h4>' + esc(b.titre) + "</h4><p>" + esc(b.texte) + "</p></div>"; }).join("") + "</div>" +
+            (d.a_retenir ? '<p class="pont"><b>À retenir :</b> ' + esc(d.a_retenir) + "</p>" : "") + (d.sources ? '<p class="mut src">' + esc(d.sources) + "</p>" : "") + (/ÉLECTEURS SIMULÉS|SIMUL/i.test(d.surtitre || "") ? '<p class="tolinks"><a href="#electeurs" data-go="electeurs">Voir les électeurs simulés sur le site</a></p>' : "") + "</section>";
+        }).join("");
+    } else $("#p-midterms").innerHTML = '<p class="mut">Présentation à venir.</p>';
+    } catch (e) { console.error("électeurs/midterms", e); }
+
     try {
     // ---------- Chiffrage et arbitrages (data/chiffrage.json, build/chiffrage_merge.py)
     var CF = C.chiffrage;
@@ -420,7 +503,7 @@
       var pubOf = {}; FT.fiches.forEach(function (f) { pubOf[f.num] = f.public; });
       var nlink = function (ns) { return (ns || []).map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(m._v[0]) : ""); }).join(" · "); };
       var pubs = function (p) { return p.fiches.map(function (n) { return esc(pubOf[n] || "Fiche " + n); }).join(", "); };
-      var card = function (p) {
+      var ficheCard = function (p) {
         return '<li><b>' + esc(p.titre) + "</b> " + badge(p.statut, SLAB[p.statut], "s-") + (p.contradiction ? " " + badge("contradiction", "Contredit le livret", "x-") : "") + " " + (p.verdict || []).map(function (v) { return badge(v); }).join(" ") +
           '<p class="mut">Fiches : ' + pubs(p) + (p.nums && p.nums.length ? " · Livret : " + nlink(p.nums) : "") + "</p>" +
           '<p class="q">« ' + esc(p.phrase_cle) + " »</p>" +
@@ -434,9 +517,9 @@
       var P_ = FT.propositions, contra = P_.filter(function (p) { return p.contradiction; }), autres = P_.filter(function (p) { return p.statut !== "livret" && !p.contradiction; }), K = FT.comptes || {};
       var fh = '<div class="thead"><h1>Fiches thématiques : ce qui changerait pour…</h1><p class="mut">' + esc(FT.source) + ". Chaque proposition des neuf fiches est rapprochée du livret ; celles qui le précisent, le modifient ou n'y figurent pas sont évaluées comme les mesures du site.</p></div>" +
         '<div class="scroll"><table class="cmp kvt"><tbody><tr><td>Propositions dans les 9 fiches</td><td><b>' + (K.propositions_brutes || "") + "</b>, soit " + P_.length + " distinctes</td></tr><tr><td>Identiques au livret</td><td><b>" + P_.filter(function (p) { return p.statut === "livret"; }).length + "</b></td></tr><tr><td>Précisent ou modifient le livret</td><td><b>" + P_.filter(function (p) { return p.statut === "precision"; }).length + "</b></td></tr><tr><td>Absentes du livret</td><td><b>" + P_.filter(function (p) { return p.statut === "nouveau"; }).length + "</b></td></tr><tr><td>Contredisent le livret</td><td><b>" + contra.length + "</b></td></tr></tbody></table></div>" +
-        '<h2 class="h2">À corriger avant diffusion : contradictions avec le livret</h2><ul class="lst prop">' + contra.map(card).join("") + "</ul>" +
+        '<h2 class="h2">À corriger avant diffusion : contradictions avec le livret</h2><ul class="lst prop">' + contra.map(ficheCard).join("") + "</ul>" +
         (FT.engagements ? '<h2 class="h2">Engagements des fiches qui contraignent le programme</h2><ul class="lst">' + FT.engagements.map(function (e) { return "<li><b>" + esc(e.titre) + "</b><p>" + esc(e.conflit) + "</p><p>" + nlink(e.nums) + "</p></li>"; }).join("") + "</ul>" : "") +
-        '<h2 class="h2">Propositions qui précisent le livret ou n\'y figurent pas</h2><ul class="lst prop">' + autres.map(card).join("") + "</ul>" +
+        '<h2 class="h2">Propositions qui précisent le livret ou n\'y figurent pas</h2><ul class="lst prop">' + autres.map(ficheCard).join("") + "</ul>" +
         '<h2 class="h2">Fiche par fiche</h2>' + FT.fiches.map(function (f) {
           var ps = P_.filter(function (p) { return p.fiches.indexOf(f.num) >= 0; });
           return '<details class="cfth"><summary><b>' + esc(f.public) + '</b> <span class="mut">' + plural(ps.length, "proposition") + "</span></summary><p class=\"mut\">" + esc(f.accroche) + '</p><div class="scroll"><table class="cmp"><thead><tr><th>Proposition</th><th>Livret</th><th>Statut</th></tr></thead><tbody>' + ps.map(function (p) {
@@ -455,7 +538,7 @@
         '<nav class="subtabs">' + SUBS.map(function (s) { return '<button data-sub="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</nav>" +
         SUBS.map(function (s) { return '<div class="sub" data-p="' + s[0] + '"></div>'; }).join("");
       $$("#p-" + t.id + " .subtabs button").forEach(function (b) { b.addEventListener("click", function () { go(t.id, b.getAttribute("data-sub")); }); });
-      renderSyn(t); renderMes(t); renderAdv(t);
+      [renderSyn, renderMes, renderAdv].forEach(function (f) { try { f(t); } catch (e) { console.error("[site] thème " + t.id + " " + f.name, e && e.stack || e); } });
     });
     function showSub(id, sub) {
       $$("#p-" + id + " .subtabs button").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-sub") === sub); });
@@ -464,6 +547,15 @@
     function renderSyn(t) {
       var h = "";
       if (t.an.length) h += '<div class="kv">' + vbar(t.an) + '<p>' + vcounts(t.an) + "</p></div>";
+      var RT = C.recherche_travail;
+      if (t.id === "travail" && RT) {
+        var RE = {}; ((RT.eval || {}).evaluations || []).forEach(function (e) { RE[e.id] = e; });
+        h += '<h2 class="h2">Travailler plus, jeunes, seniors : ce que dit la recherche <span class="mut">· ' + fdate(RT.maj) + "</span></h2>" + (RT.resume ? "<p>" + esc(RT.resume.intro) + "</p><ul>" + RT.resume.verdicts.map(function (v) { return "<li>" + esc(v) + "</li>"; }).join("") + "</ul>" : "") +
+          '<p class="mut">' + RT.propositions.length + " propositions alternatives ou complémentaires, à valider. Chacune est passée au filtre de l'évaluateur « Édouard Philippe » simulé (preuves, coût, croissance, vision), qui ne parle pas au nom du candidat.</p>" +
+          RT.propositions.map(function (p) { var e = RE[p.id];
+            return '<details class="mes"><summary><div class="mh">' + badge("x", esc(p.public), "x-") + (e ? badge("x", "Évaluateur : " + esc(e.decision), "x-") : "") + '</div><div class="mt">' + esc(p.titre) + '</div></summary><div class="mb"><p><b>Mécanisme.</b> ' + esc(p.mecanisme) + "</p><p><b>Preuves.</b> " + esc(p.preuves) + "</p><p><b>Ailleurs.</b> " + esc(p.ailleurs) + "</p><p><b>Coût.</b> " + esc(p.cout) + "</p><p><b>Premier pas.</b> " + esc(p.premier_pas) + "</p>" + ((p.mesures_livret_liees || []).length ? '<p class="mut">Mesures du livret : ' + p.mesures_livret_liees.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") +
+              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>" : "") + "</div></details>"; }).join("");
+      }
       var chg = t.an.filter(function (m) { return m._piste; }).sort(function (a, b) { return (a._sol || 0) - (b._sol || 0); }).slice(0, 6);
       if (chg.length) h += '<h2 class="h2">Ce que nous recommandons de changer</h2><p class="mut">Les mesures les plus fragiles d\'abord ; toutes les fiches sont dans « Mesures de Philippe ».</p><ul class="lst rec">' + chg.map(function (m) { return mlink(m, " " + badge(m._v[0]) + '<p>' + inline(m._piste) + "</p>"); }).join("") + "</ul>";
       (C.pistes || []).filter(function (x) { return x.theme === t.id; }).forEach(function (x) {

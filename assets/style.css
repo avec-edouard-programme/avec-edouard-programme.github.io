@@ -179,3 +179,21 @@ tr.tot td{border-top:2px solid var(--line)}
 /* Fiches thématiques */
 .s-livret{background:#EEF1F5;color:#4A5563}.s-precision{background:#FFF4DC;color:#7A5A00}.s-nouveau{background:#E7F0FF;color:#1F3A5F}.x-contradiction{background:#FCE4E0;color:#A1301A}
 p.q{font-style:italic;color:var(--mut)}
+/* électeurs simulés et midterms */
+.hwrap{overflow-x:auto;margin:12px 0}
+table.heat{border-collapse:collapse;font-size:13px;min-width:820px}
+table.heat th,table.heat td{border:1px solid var(--line);padding:6px;text-align:center;vertical-align:middle}
+table.heat thead th small,table.heat tbody th small{display:block;font-weight:400;color:#667;font-size:11px;line-height:1.2;margin-top:2px}
+table.heat tbody th{text-align:left;max-width:230px;font-size:13px}
+.hx{display:inline-block;min-width:30px;padding:3px 6px;border-radius:6px;font-weight:700}
+.hm2{background:#c0392b;color:#fff}.hm1{background:#f1a99b;color:#3a0b05}.hp0,.hm0{background:#eceff3;color:#333}
+.hp1{background:#a9d8b8;color:#0b3a1a}.hp2{background:#1e8449;color:#fff}
+.pgrid,.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.chip.off{opacity:.55;cursor:default}
+table.mtab td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+section.slide{border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:18px 0;background:var(--card)}
+section.slide h2{margin:4px 0 8px;font-size:22px}
+section.slide .src{font-size:12px}
+table.heat.big td{min-width:64px;cursor:pointer}
+table.heat.big td.ck:hover{outline:2px solid var(--acc)}
+table.heat.big thead th{font-size:12px;max-width:90px}
