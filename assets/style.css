@@ -197,3 +197,8 @@ section.slide .src{font-size:12px}
 table.heat.big td{min-width:64px;cursor:pointer}
 table.heat.big td.ck:hover{outline:2px solid var(--acc)}
 table.heat.big thead th{font-size:12px;max-width:90px}
+/* commentaires et suivi des modifications */
+.cmt{margin-top:10px}
+.cmt textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);border-radius:8px;margin:6px 0}
+.trk del{background:#fde2df;color:#8a1c12;text-decoration:line-through}
+.trk ins{background:#dff3e5;color:#0b4a24;text-decoration:underline}
