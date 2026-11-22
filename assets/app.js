@@ -462,6 +462,8 @@
           });
           if (R.recherches.length) dh += '<h2 class="h2">Recherches du tour</h2>' + R.recherches.map(function (r) { return '<details class="in"><summary>' + esc(r.fichier) + "</summary>" + md(r.texte) + "</details>"; }).join("");
         });
+        var TM = DB.temoignages;
+        if (TM && TM.items) dh += '<h2 class="h2">Témoignages et réponses modèles (format court, environ 45 s)</h2><p class="mut">Format repris d\'une vidéo de témoignages d\'un concurrent : l\'électeur écrit en message privé, le candidat répond face caméra. Structure : reconnaître le ressenti, une expérience vécue (à fournir par le candidat, rien n\'est inventé), une valeur, une mesure du livret, « écrivez-moi ». Témoignages construits à partir des doléances sourcées de chaque électeur simulé ; les propositions du groupe sont signalées comme non validées.</p>' + TM.items.map(function (t) { return '<details class="mes" id="tm-' + esc(t.id) + '"><summary><div class="mh">' + badge("x", "« " + t.mot_cle_ecran + " »", "x-") + '</div><div class="mt">' + esc(t.libelle) + '</div></summary><div class="mb"><div class="box"><h4>Témoignage</h4><p>' + esc(t.temoignage) + '</p></div><div class="box"><h4>Réponse modèle</h4><p>' + esc(t.reponse_modele) + '</p><p class="mut">Risque : ' + esc(t.risque) + "</p></div>" + cbox("temoignage-" + t.id, "Réponse modèle · " + t.libelle, t.reponse_modele) + "</div></details>"; }).join("");
         $("#p-debats").innerHTML = dh;
       } else $("#p-debats").innerHTML = '<p class="mut">À venir.</p>';
     } catch (e) { console.error("[site] debats", e); }
