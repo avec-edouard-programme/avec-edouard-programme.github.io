@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -220,6 +220,9 @@
       }
       var rr = m._att ? RIV.map(function (r) { var c = m._att[r.id]; if (!c || c.position === "absente") return ""; return '<p class="arow"><span class="p-' + c.position + '"><b>' + esc(r.bloc) + "</b> " + esc(PLAB[c.position]) + "</span> " + esc(c.motif || c.proposition || "") + "</p>"; }).join("") : "";
       if (rr) h += '<div class="box"><h4>Face aux adversaires</h4>' + rr + "</div>";
+      var CVm = C.convergences && C.convergences.par_mesure && C.convergences.par_mesure[m.num];
+      if (CVm) { var PLD = { proche: "proche", partiel: "en partie d'accord", oppose: "opposé", absent: "pas de position" };
+        h += '<p class="pos"><b>À droite :</b> ' + ["lisnard", "retailleau"].filter(function (k) { return CVm[k]; }).map(function (k) { var x = CVm[k]; return '<span class="p-' + esc(x.position) + '"><b>' + (k === "lisnard" ? "Lisnard" : "Retailleau") + "</b> " + esc(PLD[x.position] || x.position) + (x.detail ? " : " + esc(x.detail) : "") + "</span>"; }).join(" ") + "</p>"; }
       var etu = ((C.notes_ext || {}).notes || []).filter(function (x) { return x.par_mesure && x.par_mesure[m.num]; });
       if (etu.length) h += '<div class="box"><h4>Autres études à prendre en compte</h4>' + etu.map(function (x) { var p = x.par_mesure[m.num]; return "<p><b>" + esc(x.source) + ", « " + esc(x.titre) + " » (" + esc(fdate(x.date)) + ")</b> · <i>" + esc(p.sens) + "</i> : " + esc(p.texte) + (x.url ? ' <a href="' + esc(encodeURI(decodeURI(x.url))) + '" target="_blank" rel="noopener">source</a>' : "") + "</p>"; }).join("") + "</div>";
       m.analyses.forEach(function (t, i) { var a = anal[t], x = a.fiche || a.detail; if (i === 0) { var fs = firstSentence(x); var k = x.indexOf(fs.split(" ").slice(0, 4).join(" ")); if (k >= 0 && k < 5) { var e = x.indexOf(fs.slice(-12)); if (e > 0) x = x.slice(e + 12); } } h += '<details class="in"><summary>Analyse' + (m.analyses.length > 1 ? " · " + esc(a.titre) : "") + "</summary>" + md(x) + (a.detail && a.fiche ? '<details class="in"><summary>Détail et sources</summary>' + md(a.detail) + "</details>" : "") + "</details>"; });
@@ -380,6 +383,43 @@
       $("#dr-go").addEventListener("click", function () { var t = 30; clearInterval(tm); $("#dr-t").textContent = t + " s"; tm = setInterval(function () { t--; $("#dr-t").textContent = t > 0 ? t + " s" : "Temps écoulé"; if (t <= 0) { clearInterval(tm); $("#dr-a").hidden = false; } }, 1000); });
       dnext();
     } else $("#p-preparation").innerHTML = '<p class="mut">Préparation à venir.</p>';
+
+    // ---------- Un État qui marche : pourquoi c'est si dur de faire en France, et comment en sortir
+    try {
+      var EQ = C.etat_qui_marche;
+      if (EQ) {
+        var R = EQ.resume || {}, EVE = {}; ((EQ.eval || {}).evaluations || []).forEach(function (e) { EVE[e.id] = e; });
+        $("#p-etat").innerHTML = '<div class="thead"><h1>Un État qui marche</h1><p class="lead">' + esc(R.these || "") + "</p></div>" +
+          (R.causes ? '<h2 class="h2">Pourquoi c\'est si dur de faire en France</h2><div class="pgrid">' + R.causes.map(function (c) { return '<div class="box"><h4>' + esc(c.titre) + "</h4><p>" + esc(c.fait) + '</p><p class="mut">' + esc(c.source || "") + "</p></div>"; }).join("") + "</div>" : "") +
+          (R.ailleurs ? '<h2 class="h2">Ce qui a marché ailleurs</h2><ul class="lst">' + R.ailleurs.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
+          '<h2 class="h2">Une sortie de crise : ' + EQ.propositions.length + " propositions pour les 100 premiers jours</h2>" +
+          EQ.propositions.map(function (p) { var e = EVE[p.id];
+            return '<details class="mes"><summary><div class="mh">' + (e ? badge("x", "Évaluateur : " + e.decision, "x-") : "") + '</div><div class="mt">' + esc(p.titre) + '</div></summary><div class="mb"><p><b>Mécanisme.</b> ' + esc(p.mecanisme) + "</p><p><b>Preuves.</b> " + esc(p.preuves) + "</p><p><b>Ailleurs.</b> " + esc(p.ailleurs) + "</p><p><b>Coût.</b> " + esc(p.cout) + "</p><p><b>Premier pas.</b> " + esc(p.premier_pas) + "</p><p><b>Indicateur publié.</b> " + esc(p.indicateur) + "</p>" +
+              ((p.mesures_livret_liees || []).length ? '<p class="mut">Mesures du livret : ' + p.mesures_livret_liees.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") +
+              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p></div>" : "") +
+              cbox("etat-" + p.id, "Un État qui marche · " + p.titre, p.titre + ". " + p.mecanisme) + "</div></details>"; }).join("") +
+          (R.confiance ? '<h2 class="h2">Comment l\'efficacité visible reconstruit la confiance</h2><p>' + esc(R.confiance) + "</p>" : "");
+      } else $("#p-etat").innerHTML = '<p class="mut">Analyse en cours.</p>';
+    } catch (e) { console.error("[site] etat", e); }
+
+    // ---------- Convergences à droite : bonnes idées, terrain commun, désaccords (Lisnard, Retailleau)
+    try {
+      var CV = C.convergences, CN = { lisnard: "David Lisnard", retailleau: "Bruno Retailleau", groupe: "Préparer l'avenir" };
+      if (CV) {
+        var idees = (CV.idees_a_prendre || []).map(function (x) { return { src: x.candidat, titre: x.titre, detail: x.detail, eval: x.evaluation, preuves: x.preuves, nums: x.mesures_livret_liees || [], id: "droite-" + x.id, url: x.url, source: x.source }; });
+        var EVT = ((C.recherche_travail || {}).eval || {}).evaluations || [];
+        (C.recherche_travail ? C.recherche_travail.propositions : []).forEach(function (p) { var e = EVT.filter(function (z) { return z.id === p.id; })[0]; if (e && e.decision === "adopter") idees.push({ src: "groupe", titre: p.titre, detail: p.mecanisme, eval: "adoptée par l'évaluateur (preuves " + e.preuves + "/5)", preuves: p.preuves, nums: p.mesures_livret_liees || [], id: "travail-" + p.id }); });
+        (((C.boucle_messages || {}).propositions_sante) || []).forEach(function (p) { idees.push({ src: "groupe", titre: p.titre, detail: p.mecanisme, eval: "proposition du groupe (santé, absente du livret)", preuves: p.preuves, nums: [], id: "sante-" + p.id }); });
+        var cnt = function (k, pos) { return Object.keys(CV.par_mesure || {}).filter(function (n) { return CV.par_mesure[n][k] && CV.par_mesure[n][k].position === pos; }).length; };
+        var nl = function (ns) { return (ns || []).map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", "); };
+        $("#p-droite").innerHTML = '<div class="thead"><h1>Convergences à droite</h1><p class="mut">En cinq minutes : les bonnes idées de David Lisnard, de Bruno Retailleau et de notre groupe qui manquent au livret, le terrain commun pour rassembler, et les vrais désaccords. Positions tirées de leurs déclarations publiques sourcées ; évaluations du groupe selon les mêmes critères que pour le livret. ' + esc(CV.limites || "") + "</p></div>" +
+          '<div class="pgrid">' + ["lisnard", "retailleau"].map(function (k) { return '<div class="box"><h4>' + CN[k] + "</h4><p>" + cnt(k, "proche") + " mesures du livret proches, " + cnt(k, "partiel") + " en partie, " + cnt(k, "oppose") + " opposées</p></div>"; }).join("") + "</div>" +
+          '<h2 class="h2">Les bonnes idées à prendre, d\'où qu\'elles viennent (' + idees.length + ")</h2>" +
+          idees.map(function (x) { return '<details class="mes"><summary><div class="mh">' + badge("x", CN[x.src] || x.src, "x-") + badge("x", x.eval, "x-") + '</div><div class="mt">' + esc(x.titre) + '</div></summary><div class="mb"><p>' + esc(x.detail) + "</p><p><b>Preuves.</b> " + esc(x.preuves) + "</p>" + (x.nums.length ? '<p class="mut">Mesures du livret liées : ' + nl(x.nums) + "</p>" : "") + (x.url ? '<p class="mut"><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.source || "source") + "</a></p>" : "") + cbox(x.id, "Idée à prendre · " + x.titre, x.titre + ". " + x.detail) + "</div></details>"; }).join("") +
+          '<h2 class="h2">Le terrain commun</h2><ul class="lst">' + (CV.convergences_fortes || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + x.qui.map(function (k) { return CN[k] || k; }).join(", ") + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>" +
+          '<h2 class="h2">Les vrais désaccords</h2><ul class="lst">' + (CV.desaccords || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + esc(CN[x.qui] || x.qui) + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>";
+      } else $("#p-droite").innerHTML = '<p class="mut">Analyse en cours.</p>';
+    } catch (e) { console.error("[site] droite", e); }
 
     // ---------- électeurs simulés (personas/ : kit reproductible, simulations, boucle)
     try {
