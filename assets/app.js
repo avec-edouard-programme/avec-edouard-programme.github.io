@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -435,6 +435,36 @@
           '<h2 class="h2">Les vrais désaccords</h2><ul class="lst">' + (CV.desaccords || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + esc(CN[x.qui] || x.qui) + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>";
       } else $("#p-droite").innerHTML = '<p class="mut">Analyse en cours.</p>';
     } catch (e) { console.error("[site] droite", e); }
+
+    // ---------- Débats simulés : panel centre-droite, transcriptions, évaluation, décisions, recherches
+    try {
+      var DB = C.debats;
+      if (DB && DB.rounds && DB.rounds.length) {
+        var DLAB = { "modérateur": "Modérateur", "porte-parole": "Porte-parole (livret seulement)", "retraite-tente-lisnard": "Retraité tenté par Lisnard", "patron-pme-lisnard": "Patron de PME, électeur Lisnard", "cadre-tech-ex-zemmour": "Jeune cadre tech, ex-Zemmour", "medecin-centriste": "Médecin généraliste centriste", "mere-lr-cadre": "Mère de famille cadre, électrice LR" };
+        var DTH = { education: "Éducation", sante: "Santé", retraites: "Retraites", dette: "Dette, dépenses et impôts" };
+        var dlst = function (xs) { return xs && xs.length ? '<ul class="dlst">' + xs.map(function (x) { return "<li>" + esc(typeof x === "string" ? x : JSON.stringify(x)) + "</li>"; }).join("") + "</ul>" : ""; };
+        var dh = '<div class="thead"><h1>Débats simulés : électorat du centre et de la droite</h1><p class="mut">Cinq électeurs fictifs du centre et de la droite débattent, thème par thème, face à un porte-parole qui ne cite que le livret. Chaque chiffre porte sa source entre crochets. Les transcriptions sont évaluées : ce qui porte, ce qui tombe à plat, faits contestés, réponses manquantes, répliques recommandées, recherches à lancer. Ce n\'est pas un sondage : ce sont des objections à préparer. SIMULATION, usage interne.</p></div>';
+        DB.rounds.slice().reverse().forEach(function (R) {
+          var E = R.evaluation || {};
+          dh += '<h2 class="h2">' + esc(R.round.replace("round-", "Tour ")) + "</h2>";
+          if (E.synthese) dh += '<div class="box"><h4>Synthèse</h4>' + (Array.isArray(E.synthese) ? dlst(E.synthese) : "<p>" + esc(E.synthese) + "</p>") + "</div>";
+          if (E.decisions_candidat) dh += '<h2 class="h2">Décisions qui feraient bouger le panel (à trancher par le candidat)</h2>' + E.decisions_candidat.map(function (d, i) { return '<details class="mes"><summary><div class="mt">' + (i + 1) + ". " + esc(d.decision) + '</div></summary><div class="mb"><p>' + esc(d.pourquoi) + '</p><p class="mut">Électeurs concernés : ' + esc(d.electeurs) + "</p>" + cbox("debat-" + R.round + "-d" + (i + 1), "Décision : " + d.decision, d.decision) + "</div></details>"; }).join("");
+          R.debats.forEach(function (D) {
+            var T = (E.themes || {})[D.theme] || {};
+            dh += '<details class="mes"><summary><div class="mt">' + esc(DTH[D.theme] || D.theme) + ' <span class="mut">· ' + D.transcription.length + " tours</span></div></summary><div class=\"mb\">" +
+              '<div class="hwrap"><table class="heat"><thead><tr><th>Électeur</th><th>Avant</th><th>Après</th></tr></thead><tbody>' + Object.keys(D.vote_avant || {}).map(function (k) { return "<tr><th>" + esc(DLAB[k] || k) + '</th><td style="text-align:left">' + esc(D.vote_avant[k]) + '</td><td style="text-align:left">' + esc((D.vote_apres || {})[k] || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+              (T.porte ? '<div class="pgrid"><div class="box"><h4>Ce qui a porté</h4>' + dlst(T.porte) + '</div><div class="box"><h4>Ce qui est tombé à plat</h4>' + dlst(T.a_plat) + "</div></div>" : "") +
+              (T.repliques ? '<h4>Répliques recommandées</h4>' + T.repliques.map(function (r, j) { return '<div class="box"><p><b>' + esc(r.objection) + "</b></p><p>" + esc(r.reponse) + '</p><p class="mut">' + esc(r.source) + "</p>" + cbox("debat-" + R.round + "-" + D.theme + "-r" + (j + 1), (DTH[D.theme] || D.theme) + " · réplique " + (j + 1), r.reponse) + "</div>"; }).join("") : "") +
+              (T.faits_contestes ? '<h4>Faits contestés</h4><ul class="dlst">' + T.faits_contestes.map(function (f) { return "<li><b>" + esc(f.verdict) + "</b> · " + esc(f.fait) + (f.note ? ' <span class="mut">' + esc(f.note) + "</span>" : "") + "</li>"; }).join("") + "</ul>" : "") +
+              (T.manquants ? "<h4>Réponses manquantes</h4>" + dlst(T.manquants) : "") + (T.fractures ? "<h4>Lignes de fracture à droite</h4>" + dlst(T.fractures) : "") +
+              (T.recherches ? "<h4>Recherches lancées</h4>" + dlst(T.recherches.map(function (q) { return q.question; })) : "") +
+              '<details class="in"><summary>Transcription complète</summary>' + D.transcription.map(function (t) { return '<p><b>' + esc(DLAB[t.qui] || t.qui) + " :</b> " + esc(t.texte) + "</p>"; }).join("") + "</details></div></details>";
+          });
+          if (R.recherches.length) dh += '<h2 class="h2">Recherches du tour</h2>' + R.recherches.map(function (r) { return '<details class="in"><summary>' + esc(r.fichier) + "</summary>" + md(r.texte) + "</details>"; }).join("");
+        });
+        $("#p-debats").innerHTML = dh;
+      } else $("#p-debats").innerHTML = '<p class="mut">À venir.</p>';
+    } catch (e) { console.error("[site] debats", e); }
 
     // ---------- Retour du porte-à-porte : chiffres, leçons, priorités qui alimentent le modèle, formulaire de retour
     try {
