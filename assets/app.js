@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["noteia", "Note IA"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -411,7 +411,7 @@
           EQ.propositions.map(function (p) { var e = EVE[p.id];
             return '<details class="mes"><summary><div class="mh">' + (e ? badge("x", "Évaluateur : " + e.decision, "x-") : "") + '</div><div class="mt">' + esc(p.titre) + '</div></summary><div class="mb"><p><b>Mécanisme.</b> ' + esc(p.mecanisme) + "</p><p><b>Preuves.</b> " + esc(p.preuves) + "</p><p><b>Ailleurs.</b> " + esc(p.ailleurs) + "</p><p><b>Coût.</b> " + esc(p.cout) + "</p><p><b>Premier pas.</b> " + esc(p.premier_pas) + "</p><p><b>Indicateur publié.</b> " + esc(p.indicateur) + "</p>" +
               ((p.mesures_livret_liees || []).length ? '<p class="mut">Mesures du livret : ' + p.mesures_livret_liees.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") +
-              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p></div>" : "") +
+              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · " + (e.ciblage != null ? "ciblage " + e.ciblage + "/5 · " : "") + "croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p></div>" : "") +
               cbox("etat-" + p.id, "Un État qui marche · " + p.titre, p.titre + ". " + p.mecanisme) + "</div></details>"; }).join("") +
           (R.confiance ? '<h2 class="h2">Comment l\'efficacité visible reconstruit la confiance</h2><p>' + esc(R.confiance) + "</p>" : "");
       } else $("#p-etat").innerHTML = '<p class="mut">Analyse en cours.</p>';
@@ -545,7 +545,7 @@
       }).join("") + "</div>";
       // boucle
       var BO = EL.boucle, EV = {}; ((EL.eval_philippe || {}).evaluations || []).forEach(function (e) { EV[e.id] = e; });
-      var evOf = function (id) { var e = EV[id]; if (!e) return ""; return '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>"; };
+      var evOf = function (id) { var e = EV[id]; if (!e) return ""; return '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · " + (e.ciblage != null ? "ciblage " + e.ciblage + "/5 · " : "") + "croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>"; };
       eh += '<div data-em="boucle">' + (BO ? '<p class="mut">' + esc(BO.intro) + (EL.eval_philippe ? " Chaque proposition passe ensuite un dernier filtre : un évaluateur simulé, inspiré du profil public du candidat, qui juge les preuves, le coût, l'effet sur la croissance et la cohérence avec une France qui compte dans le monde. Il ne parle pas au nom du candidat." : "") + "</p>" + (BO.propositions || []).map(function (x) {
         return '<div class="box"><h4>' + (x.nums || []).map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + " · " + esc(x.titre) + '</h4><p><b>Ce que disent les électeurs simulés :</b> ' + esc(x.constat) + '</p><p class="rep"><b>Proposition (à valider) :</b> ' + esc(x.proposition) + "</p>" + (x.type ? '<p class="mut">' + esc(x.type) + "</p>" : "") + evOf(x.id) + cbox("electeurs-" + x.id, "Électeurs simulés · " + x.titre, x.proposition) + "</div>";
       }).join("") : '<p class="mut">Synthèse à venir.</p>') + "</div>";
@@ -606,6 +606,25 @@
         '<h2 class="h2">Pourquoi : ce que les midterms nous apprennent</h2>' + why.map(slide).join("");
     } else $("#p-organisation").innerHTML = '<p class="mut">À venir.</p>';
     } catch (e) { console.error("électeurs/organisation", e); }
+    try { // ---------- Note IA (notes/2026-11-19-note-IA.md, build/patch_noteia.py)
+      var NI = C.note_ia, pNI = $("#p-noteia");
+      if (pNI && NI) {
+        var lines = String(NI.md).split(/\n/), html = [], buf = [], quote = [];
+        var flush = function () { if (buf.length) { html.push(md(buf.join("\n"))); buf = []; } };
+        var flushQ = function () { if (quote.length) { html.push('<div class="box">' + md(quote.join("\n").replace(/^###\s*/gm, "#### ")) + "</div>"); quote = []; } };
+        lines.forEach(function (l) {
+          if (/^>\s?/.test(l)) { flush(); quote.push(l.replace(/^>\s?/, "")); return; }
+          flushQ();
+          var im = l.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+          if (im) { flush(); if (/methode/.test(im[2]) && NI.methode) html.push('<figure><img src="' + NI.methode + '" alt="' + esc(im[1]) + '" width="440"><figcaption class="mut">' + esc(im[1]) + "</figcaption></figure>"); return; }
+          if (/^## /.test(l)) { flush(); html.push('<h2 class="h2">' + inline(l.slice(3)) + "</h2>"); return; }
+          if (/^### /.test(l)) { flush(); html.push("<h4>" + inline(l.slice(4)) + "</h4>"); return; }
+          buf.push(l);
+        });
+        flush(); flushQ();
+        pNI.innerHTML = '<div class="thead"><h1>' + esc(NI.titre || "Note IA") + '</h1><p class="mut">' + esc(NI.auteur) + " · note « L'IA au service du travail programmatique », version du site (les captures du mode d'emploi renvoient aux onglets eux-mêmes).</p></div>" + html.join("");
+      } else if (pNI) pNI.innerHTML = '<p class="mut">À venir.</p>';
+    } catch (e) { console.error("note IA", e); }
 
     try {
     // ---------- Chiffrage et arbitrages (data/chiffrage.json, build/chiffrage_merge.py)
@@ -734,7 +753,7 @@
           '<p class="mut">' + RT.propositions.length + " propositions alternatives ou complémentaires, à valider. Chacune est passée au filtre de l'évaluateur « Édouard Philippe » simulé (preuves, coût, croissance, vision), qui ne parle pas au nom du candidat.</p>" +
           RT.propositions.map(function (p) { var e = RE[p.id];
             return '<details class="mes"><summary><div class="mh">' + badge("x", esc(p.public), "x-") + (e ? badge("x", "Évaluateur : " + esc(e.decision), "x-") : "") + '</div><div class="mt">' + esc(p.titre) + '</div></summary><div class="mb"><p><b>Mécanisme.</b> ' + esc(p.mecanisme) + "</p><p><b>Preuves.</b> " + esc(p.preuves) + "</p><p><b>Ailleurs.</b> " + esc(p.ailleurs) + "</p><p><b>Coût.</b> " + esc(p.cout) + "</p><p><b>Premier pas.</b> " + esc(p.premier_pas) + "</p>" + ((p.mesures_livret_liees || []).length ? '<p class="mut">Mesures du livret : ' + p.mesures_livret_liees.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") +
-              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>" : "") + cbox("travail-" + p.id, "Travail, jeunes, seniors · " + p.titre, p.titre + ". " + p.mecanisme) + "</div></details>"; }).join("");
+              (e ? '<div class="box chg"><h4>Évaluateur « Édouard Philippe » (simulé) : ' + esc(e.decision) + '</h4><p class="mut">Preuves ' + e.preuves + "/5 · coût-efficacité " + e.cout_efficacite + "/5 · " + (e.ciblage != null ? "ciblage " + e.ciblage + "/5 · " : "") + "croissance " + e.croissance + "/5 · vision " + e.vision + "/5</p><p><b>Sa question :</b> " + esc(e.question) + "</p>" + (e.ce_quil_garde ? "<p><b>Ce qu'il garde :</b> " + esc(e.ce_quil_garde) + "</p>" : "") + "</div>" : "") + cbox("travail-" + p.id, "Travail, jeunes, seniors · " + p.titre, p.titre + ". " + p.mecanisme) + "</div></details>"; }).join("");
       }
       var PS2 = (C.boucle_messages || {}).propositions_sante;
       if (t.id === "social" && PS2) {
