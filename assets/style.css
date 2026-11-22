@@ -203,3 +203,9 @@ table.heat.big thead th{font-size:12px;max-width:90px}
 .trk del{background:#fde2df;color:#8a1c12;text-decoration:line-through}
 .trk ins{background:#dff3e5;color:#0b4a24;text-decoration:underline}
 .p-proche{color:#1e7a4c}.p-partiel{color:#a85f00}.p-oppose{color:#b3261e}.p-absent{color:#5f6670}
+.pbar{display:inline-block;height:10px;background:var(--acc);border-radius:3px;vertical-align:middle}
+p.bar{display:flex;justify-content:space-between;margin:2px 0}
+.pgcmt{margin:0 0 12px}
+.cmt input{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin:2px 6px 2px 0}
+#tr-form input:not([type=checkbox]){font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin:2px 6px 2px 0}
+#tr-form textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px}

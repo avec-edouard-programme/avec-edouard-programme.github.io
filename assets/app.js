@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -162,12 +162,14 @@
       return '<div class="cmt" data-cid="' + esc(id) + '" data-orig="' + esc(texte) + '" data-label="' + esc(label) + '">' +
         pub.map(function (c) { return '<div class="box chg"><h4>' + esc(c.auteur || "Édouard Philippe") + " · " + esc(fdate(c.date)) + "</h4>" + (c.version && c.version !== texte ? '<p class="trk">' + wdiff(texte, c.version) + "</p>" : "") + (c.commentaire ? "<p><i>" + esc(c.commentaire) + "</i></p>" : "") + "</div>"; }).join("") +
         "<details" + (d ? " open" : "") + "><summary>Modifier ou commenter" + (d ? " (brouillon enregistré)" : "") + '</summary><p class="mut">' + esc(label) + ". Modifiez le texte directement : vos changements apparaissent barrés ou soulignés. Rien ne part tant que vous n'appuyez pas sur « Envoyer mes commentaires ».</p>" +
-        '<textarea class="cv" rows="4">' + esc(d ? d.version : texte) + '</textarea><textarea class="cc" rows="2" placeholder="Commentaire (facultatif)">' + esc(d ? d.commentaire : "") + "</textarea>" +
+        (who() ? "" : '<p class="filters"><input class="cwho" placeholder="Votre nom (une seule fois)"><input class="crole" placeholder="Votre rôle (ex. direction de campagne)"></p>') + '<textarea class="cv" rows="4">' + esc(d ? d.version : texte) + '</textarea><textarea class="cc" rows="2" placeholder="Commentaire (facultatif)">' + esc(d ? d.commentaire : "") + "</textarea>" +
         '<p class="trk cp">' + (d && d.version !== texte ? wdiff(texte, d.version) : "") + '</p><p class="filters"><button class="chip csave">Enregistrer le brouillon</button><button class="chip cclear">Effacer le brouillon</button><button class="chip csend">Envoyer mes commentaires (' + cAll().length + ")</button></p></details></div>";
     };
+    var CID = "programmes2027-auteur";
+    var who = function () { try { return JSON.parse(localStorage.getItem(CID) || "null"); } catch (e) { return null; } };
     var cSend = function () {
-      var all = cAll(); if (!all.length) return;
-      var body = "Commentaires sur le site Programmes 2027 (" + new Date().toLocaleDateString("fr-FR") + ")\n\n" + all.map(function (c) { return "### " + c.id + " | " + c.label + "\nTexte initial : " + c.texte + "\nVersion proposée : " + c.version + (c.commentaire ? "\nCommentaire : " + c.commentaire : ""); }).join("\n\n") + "\n\n--- format machine ---\n" + JSON.stringify(all);
+      var all = cAll(); if (!all.length) return; var w = who();
+      var body = "Commentaires sur le site Programmes 2027 (" + new Date().toLocaleDateString("fr-FR") + ")" + (w ? "\nDe : " + w.nom + (w.role ? " (" + w.role + ")" : "") : "") + "\n\n" + all.map(function (c) { return "### " + c.id + " | " + c.label + "\nTexte initial : " + c.texte + "\nVersion proposée : " + c.version + (c.commentaire ? "\nCommentaire : " + c.commentaire : ""); }).join("\n\n") + "\n\n--- format machine ---\n" + JSON.stringify({ auteur: w, items: all });
       if (navigator.clipboard) navigator.clipboard.writeText(body).catch(function () {});
       var dest = (C.config && C.config.commentaires_dest) || "";
       location.href = "mailto:" + dest + "?subject=" + encodeURIComponent("[Programmes 2027] Commentaires") + "&body=" + encodeURIComponent(body.length > 1800 ? body.slice(0, 1800) + "\n[Texte complet copié dans le presse-papiers : collez-le ici.]" : body);
@@ -433,6 +435,29 @@
           '<h2 class="h2">Les vrais désaccords</h2><ul class="lst">' + (CV.desaccords || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + esc(CN[x.qui] || x.qui) + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>";
       } else $("#p-droite").innerHTML = '<p class="mut">Analyse en cours.</p>';
     } catch (e) { console.error("[site] droite", e); }
+
+    // ---------- Retour du porte-à-porte : chiffres, leçons, priorités qui alimentent le modèle, formulaire de retour
+    try {
+      var PP2 = C.porte_a_porte;
+      if (PP2) {
+        var rx = function (v) { return '<span class="hx h' + (v < 0 ? "m" : "p") + Math.abs(v) + '">' + (v > 0 ? "+" : "") + v + "</span>"; };
+        var VG = PP2.vagues[PP2.vagues.length - 1], K = VG.chiffres, mx = Math.max.apply(null, PP2.chantiers.map(function (r) { return r.priorite; }));
+        $("#p-terrain").innerHTML = '<div class="thead"><h1>Retour du porte-à-porte</h1><p class="mut">Ce que le terrain nous apprend, et comment il entre dans le modèle : les thèmes cités à la porte réordonnent les priorités et les messages testés sur les électeurs simulés. ' + esc(VG.sources) + "</p></div>" +
+          '<div class="pgrid"><div class="box"><h4>' + esc(VG.dates) + '</h4><p><b>' + K.portes_frappees + "</b> portes frappées · <b>" + K.conversations + "</b> conversations · <b>" + esc(String(K.contacts_collectes)) + "</b> contacts recueillis</p><p>" + K.binomes_deployes + " binômes déployés sur " + K.binomes_vises + " visés, pour " + K.militants_dans_la_boucle + ' militants dans la boucle.</p></div><div class="box"><h4>Ce dont les habitants ont parlé (' + K.portes_saisies_une_a_une + " portes saisies)</h4>" + Object.keys(VG.themes).map(function (t) { return '<p class="bar"><span>' + esc(t) + "</span><b>" + VG.themes[t] + "</b></p>"; }).join("") + '<p class="mut">Aussi cités : ' + esc(VG.themes_cites_sans_compte.join(", ")) + ".</p></div></div>" +
+          '<h2 class="h2">Ce que le terrain change dans le modèle</h2><p class="mut">' + esc(PP2.methode) + '</p><div class="hwrap"><table class="heat"><thead><tr><th>Chantier</th><th>Mentions à la porte</th><th>Note des électeurs simulés (pondérée)</th><th>Priorité</th></tr></thead><tbody>' +
+          PP2.chantiers.map(function (r) { return "<tr><th>" + esc(r.nom) + "</th><td>" + r.mentions_porte + " (" + r.part_porte + " %)</td><td>" + (r.note_simulee_ponderee == null ? "" : rx(Math.round(r.note_simulee_ponderee)) + " " + String(r.note_simulee_ponderee).replace(".", ",")) + '</td><td style="text-align:left"><span class="pbar" data-w="' + Math.round(100 * r.priorite / mx) + '"></span> ' + String(r.priorite).replace(".", ",") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+          '<h2 class="h2">Leçons du pilote</h2><ul class="lst">' + VG.lecons.map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("") + "</ul>" +
+          '<h2 class="h2">Envoyer un retour de terrain</h2><div class="box" id="tr-form"><p class="mut">Après une sortie : quelques chiffres et ce que vous avez entendu, sans nom ni adresse d\'habitant. Le retour part par courriel au groupe et entre dans le modèle au prochain calcul.</p><p class="filters"><input id="tr-date" placeholder="Date (ex. 29/11)"><input id="tr-lieu" placeholder="Commune ou quartier"><input id="tr-portes" placeholder="Portes frappées"><input id="tr-conv" placeholder="Conversations"></p>' +
+          '<p class="filters">' + ["santé", "pouvoir d'achat", "services publics", "école", "environnement", "logement", "sécurité", "immigration", "retraites", "dette", "charges"].map(function (t) { return '<label class="chip"><input type="checkbox" value="' + esc(t) + '"> ' + esc(t) + "</label>"; }).join("") + '</p><textarea id="tr-txt" rows="3" placeholder="Ce qui a marché, ce qui a bloqué, une phrase entendue (anonyme)"></textarea><p class="filters"><button class="chip" id="tr-send">Envoyer le retour</button></p></div>';
+        $$("#p-terrain .pbar").forEach(function (s) { s.style.width = (1.2 * +s.getAttribute("data-w")) + "px"; });
+        $("#tr-send").addEventListener("click", function () {
+          var th = $$("#tr-form input[type=checkbox]").filter(function (x) { return x.checked; }).map(function (x) { return x.value; });
+          var rec = { date: $("#tr-date").value, lieu: $("#tr-lieu").value, portes: $("#tr-portes").value, conversations: $("#tr-conv").value, themes: th, texte: $("#tr-txt").value };
+          var body = "Retour de porte-à-porte\\nDate : " + rec.date + "\\nLieu : " + rec.lieu + "\\nPortes : " + rec.portes + " ; conversations : " + rec.conversations + "\\nThèmes : " + th.join(", ") + "\\n\\n" + rec.texte + "\\n\\n--- format machine ---\\n" + JSON.stringify(rec);
+          location.href = "mailto:" + ((C.config && C.config.commentaires_dest) || "") + "?subject=" + encodeURIComponent("[Programmes 2027] Retour terrain") + "&body=" + encodeURIComponent(body);
+        });
+      } else $("#p-terrain").innerHTML = '<p class="mut">À venir.</p>';
+    } catch (e) { console.error("[site] terrain", e); }
 
     // ---------- électeurs simulés (personas/ : kit reproductible, simulations, boucle)
     try {
@@ -799,12 +824,14 @@
         (as.length ? '<h2 class="h2">Programmes adverses</h2><ul class="lst">' + as.slice(0, 60).map(function (x) { return '<li><a href="#" data-go="' + x.t + '" data-sub="adversaires" data-r="' + rid(x.titre) + '">' + esc(x.titre) + '</a> <span class="mut">· ' + esc(x.a.nom) + " · " + esc(thById[x.t].court) + "</span></li>"; }).join("") + "</ul>" : "");
     });
 
+    $$("#app > .panel").forEach(function (p) { if (p.id === "p-recherche" || p.querySelector(".pgcmt")) return; var t = $("#t-" + p.id.slice(2)); var lab = t ? t.textContent : p.id; var d = document.createElement("div"); d.className = "pgcmt"; d.innerHTML = cbox("page-" + p.id.slice(2), "Commentaire ou recommandation sur l'onglet « " + lab + " »", "").replace("Modifier ou commenter", "Commenter cette page ou faire une recommandation"); p.insertBefore(d, p.firstChild); });
     document.addEventListener("click", function (ev) {
       var t = ev.target; if (!t || !t.closest) return;
       var cb = t.closest(".cmt"); if (cb && t.closest("button")) {
         ev.preventDefault(); var cid = cb.getAttribute("data-cid"), btn = t.closest("button");
         if (btn.classList.contains("csend")) { cSend(); return; }
         if (btn.classList.contains("cclear")) { localStorage.setItem(CK + cid, "null"); cb.querySelector(".cp").innerHTML = ""; cb.querySelector(".cc").value = ""; cb.querySelector(".cv").value = cb.getAttribute("data-orig"); return; }
+        var wn = cb.querySelector(".cwho"); if (wn && wn.value.trim()) { localStorage.setItem(CID, JSON.stringify({ nom: wn.value.trim(), role: (cb.querySelector(".crole") || {}).value || "" })); }
         if (btn.classList.contains("csave")) { var orig = cb.getAttribute("data-orig") || ""; var rec = { id: cid, label: cb.getAttribute("data-label") || cid, texte: orig, version: cb.querySelector(".cv").value, commentaire: cb.querySelector(".cc").value, date: new Date().toISOString() }; localStorage.setItem(CK + cid, JSON.stringify(rec)); cb.querySelector(".cp").innerHTML = wdiff(orig, rec.version); $$(".csend").forEach(function (x) { x.textContent = "Envoyer mes commentaires (" + cAll().length + ")"; }); return; }
       }
       var n = t.closest("[data-n]"); if (n) { ev.preventDefault(); var m = byNum[+n.getAttribute("data-n")]; $("#gq").value = ""; tst[m.theme].v = tst[m.theme].s = null; if (!m.analyses.length) tst[m.theme].onlyA = false; renderMes(thById[m.theme]); go(m.theme, "mesures", m.num); return; }
