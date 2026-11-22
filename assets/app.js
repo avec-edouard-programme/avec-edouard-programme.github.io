@@ -241,6 +241,7 @@
       var kv = function (k, v) { return "<tr><td>" + k + "</td><td><b>" + v + "</b></td></tr>"; };
       var LISTS = { livret: ["Les 10 priorités du livret", prioMes], proposition: ["Notre proposition", []], phares: ["Phares jeunes", []], toutes: ["Les " + P.mesures.length + " mesures", P.mesures] };
       PR.proposition.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.proposition[1].indexOf(byNum[n]) < 0) LISTS.proposition[1].push(byNum[n]); }); });
+      if (PR.croissance) { LISTS.croissance = ["Variante croissance", []]; PR.croissance.variante.forEach(function (x) { x.nums.forEach(function (n) { if (byNum[n] && LISTS.croissance[1].indexOf(byNum[n]) < 0) LISTS.croissance[1].push(byNum[n]); }); }); }
       if (PR.griefs) { LISTS.variante = ["Variante griefs", []]; PR.griefs.variante.forEach(function (x) { x.nums.forEach(function (n) { if (byNum[n] && LISTS.variante[1].indexOf(byNum[n]) < 0) LISTS.variante[1].push(byNum[n]); }); }); }
       if (PH) PH.mesures.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.phares[1].indexOf(byNum[n]) < 0) LISTS.phares[1].push(byNum[n]); }); });
       var pst = { l: "livret", v: null, s: null, gp: false };
@@ -262,6 +263,20 @@
         '<h2 class="h2">Notre proposition de priorités</h2><p class="mut">Proposition du groupe, à discuter avec l\'équipe. Chaque priorité s\'appuie sur des mesures du livret, avec la correction à apporter.</p><ol class="lst prop">' + PR.proposition.map(function (x) {
           return "<li><b>" + esc(x.titre) + "</b>" + (x.phare ? " " + badge("phare", "Mesure phare", "x-") : "") + "<p>" + esc(x.pourquoi) + "</p><p><b>À corriger :</b> " + esc(x.corriger) + "</p><p>" + x.nums.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a> " + badge(vOf(m)); }).join(" · ") + "</p></li>";
         }).join("") + '</ol><p class="mut">' + esc(PR.garder_en_defense) + "</p>" +
+        (PR.croissance ? (function (G) { try {
+          var nl = function (ns) { return ns.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(vOf(m)) : ""); }).join(" · "); };
+          var PLAB = { garder: "À garder", renforcer: "À renforcer", recalibrer: "À recalibrer", ajouter: "À ajouter", abandonner: "À abandonner" };
+          return '<h2 class="h2">' + esc(G.titre) + '</h2><p class="mut">' + esc(G.source) + "</p>" +
+            '<div class="scroll"><table class="cmp kvt"><tbody>' + G.constat.map(function (r) { return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+            "<p>" + esc(G.lecture) + "</p>" +
+            '<h2 class="h2">Une stratégie en trois temps</h2><ul class="lst">' + G.temps.map(function (t) { return "<li><b>" + esc(t.titre) + "</b><p>" + esc(t.texte) + "</p><p>" + nl(t.nums) + "</p></li>"; }).join("") + "</ul>" +
+            '<h2 class="h2">Les leviers les mieux prouvés</h2><div class="scroll"><table class="cmp"><thead><tr><th>Levier</th><th>Effet attendu</th><th>Livret</th></tr></thead><tbody>' + G.leviers.map(function (l) {
+              return "<tr><td><b>" + esc(l.titre) + '</b><span class="mut">' + esc(PLAB[l.position] || l.position) + " · preuve " + esc(l.preuve) + "</span></td><td>" + esc(l.effet) + "</td><td>" + (l.nums.length ? nl(l.nums) : '<span class="mut">absent du livret</span>') + "</td></tr>";
+            }).join("") + "</tbody></table></div>" +
+            '<p><b>À abandonner ou différer :</b> ' + esc(G.abandonner.texte) + " " + nl(G.abandonner.nums) + "</p>" +
+            '<h2 class="h2">Variante : des priorités pour pouvoir croître à nouveau</h2><p class="mut">À comparer avec la proposition du groupe et la variante griefs ; rien n\'est arbitré.</p><ol class="lst prop">' + G.variante.map(function (x) { return "<li><b>" + esc(x.titre) + "</b><p>" + nl(x.nums) + "</p></li>"; }).join("") + "</ol>" +
+            '<p class="mut"><b>Limites :</b> ' + esc(G.limites) + "</p>";
+        } catch (e) { console.error("[site] croissance", e); return ""; } })(PR.croissance) : "") +
         (PR.griefs ? (function (G) { try {
           var nl = function (ns) { return ns.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(vOf(m)) : ""); }).join(" · "); };
           return '<h2 class="h2">' + esc(G.titre) + '</h2><p class="mut">' + esc(G.source) + "</p>" +
