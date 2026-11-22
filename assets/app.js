@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["preparation", "Préparation"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["methode", "Méthode"]]);
     $("#tabs").innerHTML = NAV.map(function (s) { var t = thById[s[0]]; return '<button class="tab" role="tab" id="t-' + s[0] + '">' + esc(s[1]) + "" + "</button>"; }).join("");
     app.innerHTML = NAV.map(function (s) { return '<section class="panel" role="tabpanel" id="p-' + s[0] + '" hidden></section>'; }).join("") + '<section class="panel" id="p-recherche" hidden></section>';
     var cur = null;
@@ -241,6 +241,7 @@
       var kv = function (k, v) { return "<tr><td>" + k + "</td><td><b>" + v + "</b></td></tr>"; };
       var LISTS = { livret: ["Les 10 priorités du livret", prioMes], proposition: ["Notre proposition", []], phares: ["Phares jeunes", []], toutes: ["Les " + P.mesures.length + " mesures", P.mesures] };
       PR.proposition.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.proposition[1].indexOf(byNum[n]) < 0) LISTS.proposition[1].push(byNum[n]); }); });
+      if (PR.griefs) { LISTS.variante = ["Variante griefs", []]; PR.griefs.variante.forEach(function (x) { x.nums.forEach(function (n) { if (byNum[n] && LISTS.variante[1].indexOf(byNum[n]) < 0) LISTS.variante[1].push(byNum[n]); }); }); }
       if (PH) PH.mesures.forEach(function (x) { x.nums.forEach(function (n) { if (LISTS.phares[1].indexOf(byNum[n]) < 0) LISTS.phares[1].push(byNum[n]); }); });
       var pst = { l: "livret", v: null, s: null, gp: false };
       var h = '<div class="thead"><h1>Priorités : ce qui doit porter la campagne</h1><p class="mut">Le livret compte ' + P.mesures.length + " mesures. Lesquelles mettre en avant, lesquelles corriger, lesquelles défendre.</p></div>" +
@@ -261,6 +262,17 @@
         '<h2 class="h2">Notre proposition de priorités</h2><p class="mut">Proposition du groupe, à discuter avec l\'équipe. Chaque priorité s\'appuie sur des mesures du livret, avec la correction à apporter.</p><ol class="lst prop">' + PR.proposition.map(function (x) {
           return "<li><b>" + esc(x.titre) + "</b>" + (x.phare ? " " + badge("phare", "Mesure phare", "x-") : "") + "<p>" + esc(x.pourquoi) + "</p><p><b>À corriger :</b> " + esc(x.corriger) + "</p><p>" + x.nums.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a> " + badge(vOf(m)); }).join(" · ") + "</p></li>";
         }).join("") + '</ol><p class="mut">' + esc(PR.garder_en_defense) + "</p>" +
+        (PR.griefs ? (function (G) { try {
+          var nl = function (ns) { return ns.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(vOf(m)) : ""); }).join(" · "); };
+          return '<h2 class="h2">' + esc(G.titre) + '</h2><p class="mut">' + esc(G.source) + "</p>" +
+            '<div class="scroll"><table class="cmp"><thead><tr><th>Grief</th><th>Ce qu\'on entend</th><th>Ce que le programme peut y répondre</th></tr></thead><tbody>' + G.items.map(function (g) {
+              return "<tr><td><b>" + esc(g.grief) + '</b><span class="mut">' + esc(g.force) + "</span></td><td>" + esc(g.constat) + "</td><td>" + esc(g.reponse) + (g.nums.length ? "<p>" + nl(g.nums) + "</p>" : "") + "</td></tr>";
+            }).join("") + "</tbody></table></div>" +
+            '<h2 class="h2">Variante : réordonner les priorités pour répondre à ces griefs</h2><p class="mut">À comparer avec la proposition du groupe ci-dessus ; rien n\'est arbitré.</p><ol class="lst prop">' + G.variante.map(function (x) {
+              return "<li><b>" + esc(x.titre) + "</b>" + (x.phare ? " " + badge("phare", "Mesure phare", "x-") : "") + "<p>" + esc(x.pourquoi) + "</p><p><b>À corriger :</b> " + esc(x.corriger) + "</p><p>" + nl(x.nums) + "</p></li>";
+            }).join("") + '</ol><p class="mut"><b>Garde-fou :</b> ' + esc(G.garde_fou) + "</p>" +
+            '<h2 class="h2">Angles de discours à arbitrer</h2><ul class="lst">' + G.angles.map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") + "</ul>";
+        } catch (e) { console.error("[site] griefs", e); return ""; } })(PR.griefs) : "") +
         '<h2 class="h2">Filtrer les mesures</h2><div class="filters" id="pf-l">' + Object.keys(LISTS).map(function (k) { return '<button class="chip" data-l="' + k + '">' + esc(LISTS[k][0]) + ' <span class="tn">' + LISTS[k][1].length + "</span></button>"; }).join("") + "</div>" +
         '<div class="filters" id="pf-v"><span class="mut">Verdict :</span>' + VORD.concat(["non-analysee"]).map(function (v) { return '<button class="chip" data-v="' + v + '">' + esc(VLAB[v]) + "</button>"; }).join("") + "</div>" +
         '<div class="filters" id="pf-s"><span class="mut">Sensibilité :</span>' + ["forte", "moyenne", "faible"].map(function (s) { return '<button class="chip" data-s="' + s + '">' + s + "</button>"; }).join("") + '<button class="chip" id="pf-gp">France grande puissance</button></div><div id="pf-out"></div>';
@@ -317,6 +329,108 @@
       dnext();
     } else $("#p-preparation").innerHTML = '<p class="mut">Préparation à venir.</p>';
 
+    try {
+    // ---------- Chiffrage et arbitrages (data/chiffrage.json, build/chiffrage_merge.py)
+    var CF = C.chiffrage;
+    if (CF && CF.candidats && CF.candidats.length) {
+      var thName = function (id) { return thById[id] ? thById[id].court : id; };
+      var fmt = function (x) { return x == null ? "n.c." : (x > 0 ? "+" : "") + x.toFixed(1).replace(".", ",") + " Md€"; };
+      var cOf = function (m) { var v = val(m); return v == null ? 0 : v; };
+      var cst = { cand: CF.candidats[0].id, off: {}, pick: null, mode: "prudent" };
+      var val = function (m) { return cst.mode === "candidat" && m.nd ? m.nd.candidat : m.central; };
+      var candById = {}; CF.candidats.forEach(function (c) { candById[c.id] = c; });
+      var byTheme = function (c, off) {
+        var o = {}; CF.themes.forEach(function (t) { o[t] = { cout: 0, eco: 0, n: 0, nc: 0 }; });
+        c.mesures.forEach(function (m) { var t = o[m.theme]; if (!t) return; t.n++; if (val(m) == null) { t.nc++; return; } if (off && off[m.id]) return; var v = val(m); if (v > 0) t.cout += v; else t.eco += v; });
+        return o;
+      };
+      var mlab = function (c, m) { return c.id === "philippe" && m.num ? '<a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) : esc(m.titre); };
+      var ch = '<div class="thead"><h1>Chiffrage et arbitrages</h1><p class="mut">Coût estimé de chaque mesure, en milliards d\'euros par an en fin de quinquennat, et son effet sur le solde public : <b>+</b> coûte, <b>−</b> rapporte. Estimations de nos agents de recherche, sourcées mesure par mesure ; effets sur la croissance exclus. Chiffrage du ' + esc(CF.date) + ".</p></div>" +
+        '<div class="filters" id="cf-c">' + CF.candidats.map(function (c) { return '<button class="chip" data-c="' + c.id + '">' + esc(c.nom) + "</button>"; }).join("") + "</div>" +
+        '<div class="filters" id="cf-m"><span class="mut">Économies annoncées sans mesures précises :</span><button class="chip" data-m="prudent">comptées à 20 % (prudent)</button><button class="chip" data-m="candidat">au mot du candidat</button></div>' +
+        '<div id="cf-out"></div><div id="cf-cmp"></div>';
+        ''; var cmpHtml = function () { return '<h2 class="h2">Comparaison des programmes, bloc par bloc</h2><p class="mut">Solde central par bloc (coûts moins économies et recettes), en Md€ par an.</p><div class="scroll"><table class="cmp"><thead><tr><th>Bloc</th>' + CF.candidats.map(function (c) { return "<th>" + esc(c.nom) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        CF.themes.map(function (t) { return "<tr><td><b>" + esc(thName(t)) + "</b></td>" + CF.candidats.map(function (c) { var x = byTheme(c)[t]; return "<td>" + (x.n ? fmt(x.cout + x.eco) : '<span class="mut">—</span>') + "</td>"; }).join("") + "</tr>"; }).join("") +
+        '<tr class="tot"><td><b>Total</b></td>' + CF.candidats.map(function (c) { var s = c.mesures.reduce(function (a, m) { return a + cOf(m); }, 0); return "<td><b>" + fmt(s) + "</b></td>"; }).join("") + "</tr>" +
+        '<tr><td>Annoncé par le candidat</td>' + CF.candidats.map(function (c) { var t = c.total_annonce; return '<td class="mut">' + (t ? esc(t.md_eur_an != null ? fmt(+t.md_eur_an) : "") + " " + esc(t.texte || "") : "—") + "</td>"; }).join("") + "</tr>" +
+        '<tr><td>Simulation externe</td>' + CF.candidats.map(function (c) { return '<td class="mut">' + (c.externe.length ? c.externe.map(function (e) { return esc(e.note || ""); }).join(" ") : "—") + "</td>"; }).join("") + "</tr>" +
+        "</tbody></table></div>"; };
+      $("#p-chiffrage").innerHTML = ch;
+      var crender = function () {
+        var c = candById[cst.cand];
+        $$("#cf-c .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-c") === cst.cand); });
+        var bt = byTheme(c, cst.off), tot = { cout: 0, eco: 0 }, maxv = 1;
+        CF.themes.forEach(function (t) { tot.cout += bt[t].cout; tot.eco += bt[t].eco; maxv = Math.max(maxv, bt[t].cout, -bt[t].eco); });
+        var nNc = c.mesures.filter(function (m) { return val(m) == null; }).length, nOff = Object.keys(cst.off).filter(function (k) { return cst.off[k]; }).length;
+        var h = '<h2 class="h2">Où va l\'argent : ' + esc(c.nom) + "</h2>" +
+          '<div class="scroll"><table class="cmp kvt"><tbody><tr><td>Coûts (dépenses nouvelles et baisses d\'impôts)</td><td><b>' + fmt(tot.cout) + "</b></td></tr><tr><td>Économies et recettes nouvelles</td><td><b>" + fmt(tot.eco) + "</b></td></tr><tr><td>Effet net sur le solde public" + (nOff ? " (sans les " + plural(nOff, "mesure") + " écartées)" : "") + "</td><td><b>" + fmt(tot.cout + tot.eco) + "</b></td></tr><tr><td>Mesures non chiffrables</td><td>" + nNc + " sur " + c.mesures.length + "</td></tr></tbody></table></div>" +
+          '<div class="cfbars">' + CF.themes.filter(function (t) { return bt[t].n; }).map(function (t) {
+            var x = bt[t];
+            return '<div class="cfrow"><span class="cft">' + esc(thName(t)) + '</span><span class="cfneg"><i class="bneg" data-w="' + (100 * -x.eco / maxv).toFixed(1) + '"></i><em>' + (x.eco ? fmt(x.eco) : "") + '</em></span><span class="cfpos"><i class="bpos" data-w="' + (100 * x.cout / maxv).toFixed(1) + '"></i><em>' + (x.cout ? fmt(x.cout) : "") + "</em></span></div>";
+          }).join("") + '</div><p class="mut">À gauche, ce que le bloc rapporte ; à droite, ce qu\'il coûte.</p>' +
+          '<h2 class="h2">Arbitrer</h2><p class="mut">Décochez une mesure pour voir le solde sans elle. Cliquez sur « Équivalences » pour voir ce qu\'elle représente en économies ailleurs dans le programme.</p>' +
+          CF.themes.filter(function (t) { return bt[t].n; }).map(function (t) {
+            var ms = c.mesures.filter(function (m) { return m.theme === t; }).sort(function (a, b) { return Math.abs(cOf(b)) - Math.abs(cOf(a)); });
+            return '<details class="cfth"><summary><b>' + esc(thName(t)) + '</b> <span class="mut">' + plural(ms.length, "mesure") + " · solde " + fmt(bt[t].cout + bt[t].eco) + "</span></summary><ul class=\"lst cfl\">" + ms.map(function (m) {
+              return '<li><label><input type="checkbox" data-id="' + esc(m.id) + '"' + (cst.off[m.id] ? "" : " checked") + (val(m) == null ? " disabled" : "") + "> " + mlab(c, m) + "</label> <b>" + fmt(val(m)) + "</b>" + (m.bas != null && m.haut != null && m.bas !== m.haut ? ' <span class="mut">(' + fmt(m.bas) + " à " + fmt(m.haut) + ")</span>" : "") + (m.nd ? ' <span class="badge b-a-chiffrer">sans mesures précises : ' + fmt(m.nd.candidat) + " annoncés</span>" : "") + ' <span class="mut">confiance ' + esc(m.confiance || "") + "</span>" + (val(m) ? ' <button class="lnk" data-eq="' + esc(m.id) + '">Équivalences</button>' : "") +
+                (cst.pick === m.id ? eqBox(c, m) : "") +
+                (m.note || m.calcul || (m.sources && m.sources.length) ? '<p class="mut">' + esc(m.note || "") + (m.calcul ? " Calcul : " + esc(m.calcul) : "") + (m.sources || []).map(function (s) { return " " + (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.ref) + "</a>" : esc(s.ref)) + (s.page ? ", " + esc(s.page) : ""); }).join(" ;") + "</p>" : "") + "</li>";
+            }).join("") + "</ul></details>";
+          }).join("");
+        $("#cf-out").innerHTML = h; $("#cf-cmp").innerHTML = cmpHtml();
+        $$("#cf-m .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-m") === cst.mode); });
+        $$("#cf-out [data-w]").forEach(function (el) { el.style.width = Math.max(0, Math.min(100, +el.getAttribute("data-w"))) + "%"; });
+        $$("#cf-out input[data-id]").forEach(function (b) { b.addEventListener("change", function () { cst.off[b.getAttribute("data-id")] = !b.checked; var op = $$("#cf-out details[open]").map(function (d) { return d.querySelector("summary b").textContent; }); crender(); $$("#cf-out details").forEach(function (d) { if (op.indexOf(d.querySelector("summary b").textContent) >= 0) d.open = true; }); }); });
+        $$("#cf-out [data-eq]").forEach(function (b) { b.addEventListener("click", function () { var id = b.getAttribute("data-eq"); cst.pick = cst.pick === id ? null : id; var op = $$("#cf-out details[open]").map(function (d) { return d.querySelector("summary b").textContent; }); crender(); $$("#cf-out details").forEach(function (d) { if (op.indexOf(d.querySelector("summary b").textContent) >= 0) d.open = true; }); }); });
+      };
+      var eqBox = function (c, m) {
+        var v = val(m), opp = c.mesures.filter(function (x) { return val(x) != null && x.id !== m.id && (v > 0 ? val(x) < 0 : val(x) > 0); });
+        opp.sort(function (a, b) { return Math.abs(Math.abs(a.central) - Math.abs(v)) - Math.abs(Math.abs(b.central) - Math.abs(v)); });
+        var same = c.mesures.filter(function (x) { return val(x) != null && x.id !== m.id && x.theme !== m.theme && (v > 0 ? val(x) > 0 : val(x) < 0); }).sort(function (a, b) { return Math.abs(b.central) - Math.abs(a.central); }).slice(0, 3);
+        return '<div class="box eco"><p><b>' + (v > 0 ? "Pour financer " : "Ce que rapporte ") + fmt(v) + " par an :</b></p><ul>" + opp.slice(0, 4).map(function (x) { return "<li>" + mlab(c, x) + " : " + fmt(val(x)) + " (" + (Math.abs(v / val(x))).toFixed(1).replace(".", ",") + " fois)</li>"; }).join("") + "</ul>" +
+          (same.length ? "<p><b>" + (v > 0 ? "Elle entre en concurrence avec :" : "Elle pourrait financer :") + "</b> " + same.map(function (x) { return mlab(c, x) + " (" + fmt(val(x)) + ")"; }).join(" · ") + "</p>" : "") + "</div>";
+      };
+      $$("#cf-m .chip").forEach(function (b) { b.addEventListener("click", function () { cst.mode = b.getAttribute("data-m"); crender(); }); });
+      $$("#cf-c .chip").forEach(function (b) { b.addEventListener("click", function () { cst.cand = b.getAttribute("data-c"); cst.off = {}; cst.pick = null; crender(); }); });
+      crender();
+    } else if ($("#p-chiffrage")) $("#p-chiffrage").innerHTML = '<p class="mut">Chiffrage en cours.</p>';
+
+
+    } catch (e) { console.error("[site] bloc chiffrage", e); var _p = document.getElementById("p-chiffrage"); if (_p) _p.innerHTML = '<p class="mut">Cette section n\'a pas pu s\'afficher.</p>'; }
+    try {
+    // ---------- Fiches thématiques « Ce qui changerait pour… » (data/fiches-thematiques.json)
+    var FT = C.fiches_th;
+    if (FT && $("#p-fiches")) {
+      var SLAB = { livret: "Dans le livret", precision: "Précise ou modifie le livret", nouveau: "Absent du livret" };
+      var pubOf = {}; FT.fiches.forEach(function (f) { pubOf[f.num] = f.public; });
+      var nlink = function (ns) { return (ns || []).map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(m._v[0]) : ""); }).join(" · "); };
+      var pubs = function (p) { return p.fiches.map(function (n) { return esc(pubOf[n] || "Fiche " + n); }).join(", "); };
+      var card = function (p) {
+        return '<li><b>' + esc(p.titre) + "</b> " + badge(p.statut, SLAB[p.statut], "s-") + (p.contradiction ? " " + badge("contradiction", "Contredit le livret", "x-") : "") + " " + (p.verdict || []).map(function (v) { return badge(v); }).join(" ") +
+          '<p class="mut">Fiches : ' + pubs(p) + (p.nums && p.nums.length ? " · Livret : " + nlink(p.nums) : "") + "</p>" +
+          '<p class="q">« ' + esc(p.phrase_cle) + " »</p>" +
+          (p.ecart ? "<p><b>Écart :</b> " + esc(p.ecart) + "</p>" : "") +
+          (p.justification ? "<p><b>Analyse :</b> " + esc(p.justification) + "</p>" : "") +
+          (p.cout_md_an != null || p.cout_source ? "<p><b>Coût estimé :</b> " + (p.cout_md_an != null ? esc(String(p.cout_md_an).replace(".", ",")) + " Md€ par an" : "à chiffrer") + (p.cout_source ? ' <span class="mut">(' + esc(p.cout_source) + ")</span>" : "") + "</p>" : "") +
+          (p.ailleurs ? "<p><b>Ailleurs.</b> " + esc(p.ailleurs) + "</p>" : "") +
+          (p.alternative ? '<div class="box chg"><p><b>Mieux vaut :</b> ' + esc(p.alternative) + "</p></div>" : "") +
+          ((p.sources || []).length ? '<p class="mut">Sources : ' + p.sources.map(function (s) { return (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.ref) + "</a>" : esc(s.ref)) + (s.page ? ", " + esc(s.page) : ""); }).join(" ; ") + "</p>" : "") + "</li>";
+      };
+      var P_ = FT.propositions, contra = P_.filter(function (p) { return p.contradiction; }), autres = P_.filter(function (p) { return p.statut !== "livret" && !p.contradiction; }), K = FT.comptes || {};
+      var fh = '<div class="thead"><h1>Fiches thématiques : ce qui changerait pour…</h1><p class="mut">' + esc(FT.source) + ". Chaque proposition des neuf fiches est rapprochée du livret ; celles qui le précisent, le modifient ou n'y figurent pas sont évaluées comme les mesures du site.</p></div>" +
+        '<div class="scroll"><table class="cmp kvt"><tbody><tr><td>Propositions dans les 9 fiches</td><td><b>' + (K.propositions_brutes || "") + "</b>, soit " + P_.length + " distinctes</td></tr><tr><td>Identiques au livret</td><td><b>" + P_.filter(function (p) { return p.statut === "livret"; }).length + "</b></td></tr><tr><td>Précisent ou modifient le livret</td><td><b>" + P_.filter(function (p) { return p.statut === "precision"; }).length + "</b></td></tr><tr><td>Absentes du livret</td><td><b>" + P_.filter(function (p) { return p.statut === "nouveau"; }).length + "</b></td></tr><tr><td>Contredisent le livret</td><td><b>" + contra.length + "</b></td></tr></tbody></table></div>" +
+        '<h2 class="h2">À corriger avant diffusion : contradictions avec le livret</h2><ul class="lst prop">' + contra.map(card).join("") + "</ul>" +
+        (FT.engagements ? '<h2 class="h2">Engagements des fiches qui contraignent le programme</h2><ul class="lst">' + FT.engagements.map(function (e) { return "<li><b>" + esc(e.titre) + "</b><p>" + esc(e.conflit) + "</p><p>" + nlink(e.nums) + "</p></li>"; }).join("") + "</ul>" : "") +
+        '<h2 class="h2">Propositions qui précisent le livret ou n\'y figurent pas</h2><ul class="lst prop">' + autres.map(card).join("") + "</ul>" +
+        '<h2 class="h2">Fiche par fiche</h2>' + FT.fiches.map(function (f) {
+          var ps = P_.filter(function (p) { return p.fiches.indexOf(f.num) >= 0; });
+          return '<details class="cfth"><summary><b>' + esc(f.public) + '</b> <span class="mut">' + plural(ps.length, "proposition") + "</span></summary><p class=\"mut\">" + esc(f.accroche) + '</p><div class="scroll"><table class="cmp"><thead><tr><th>Proposition</th><th>Livret</th><th>Statut</th></tr></thead><tbody>' + ps.map(function (p) {
+            return "<tr><td><b>" + esc(p.titre) + '</b><span class="mut">' + esc(p.rubrique || "") + "</span></td><td>" + (p.nums && p.nums.length ? nlink(p.nums) : '<span class="mut">—</span>') + "</td><td>" + badge(p.statut, SLAB[p.statut], "s-") + (p.contradiction ? " " + badge("contradiction", "Contredit", "x-") : "") + "</td></tr>";
+          }).join("") + "</tbody></table></div></details>";
+        }).join("");
+      $("#p-fiches").innerHTML = fh;
+    }
+    } catch (e) { console.error("[site] bloc fiches", e); var _p = document.getElementById("p-fiches"); if (_p) _p.innerHTML = '<p class="mut">Cette section n\'a pas pu s\'afficher.</p>'; }
     // ---------- pages thème
     var SUBS = [["synthese", "Synthèse"], ["mesures", "Mesures de Philippe"], ["adversaires", "Face aux adversaires"]];
     var tst = {};
