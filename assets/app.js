@@ -267,7 +267,7 @@
           var nl = function (ns) { return ns.map(function (n) { var m = byNum[n]; return '<a href="#" data-n="' + n + '">N°' + n + "</a>" + (m ? " " + badge(vOf(m)) : ""); }).join(" · "); };
           var PLAB = { garder: "À garder", renforcer: "À renforcer", recalibrer: "À recalibrer", ajouter: "À ajouter", abandonner: "À abandonner" };
           return '<h2 class="h2">' + esc(G.titre) + '</h2><p class="mut">' + esc(G.source) + "</p>" +
-            '<div class="scroll"><table class="cmp kvt"><tbody>' + G.constat.map(function (r) { return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+            '<div class="scroll"><table class="cmp"><tbody>' + G.constat.map(function (r) { return "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</tbody></table></div>" +
             "<p>" + esc(G.lecture) + "</p>" +
             '<h2 class="h2">Une stratégie en trois temps</h2><ul class="lst">' + G.temps.map(function (t) { return "<li><b>" + esc(t.titre) + "</b><p>" + esc(t.texte) + "</p><p>" + nl(t.nums) + "</p></li>"; }).join("") + "</ul>" +
             '<h2 class="h2">Les leviers les mieux prouvés</h2><div class="scroll"><table class="cmp"><thead><tr><th>Levier</th><th>Effet attendu</th><th>Livret</th></tr></thead><tbody>' + G.leviers.map(function (l) {
