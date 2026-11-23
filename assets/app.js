@@ -431,6 +431,29 @@
           '<div class="pgrid">' + ["lisnard", "retailleau"].map(function (k) { return '<div class="box"><h4>' + CN[k] + "</h4><p>" + cnt(k, "proche") + " mesures du livret proches, " + cnt(k, "partiel") + " en partie, " + cnt(k, "oppose") + " opposées</p></div>"; }).join("") + "</div>" +
           '<h2 class="h2">Les bonnes idées à prendre, d\'où qu\'elles viennent (' + idees.length + ")</h2>" +
           idees.map(function (x) { return '<details class="mes"><summary><div class="mh">' + badge("x", CN[x.src] || x.src, "x-") + badge("x", x.eval, "x-") + '</div><div class="mt">' + esc(x.titre) + '</div></summary><div class="mb"><p>' + esc(x.detail) + "</p><p><b>Preuves.</b> " + esc(x.preuves) + "</p>" + (x.nums.length ? '<p class="mut">Mesures du livret liées : ' + nl(x.nums) + "</p>" : "") + (x.url ? '<p class="mut"><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.source || "source") + "</a></p>" : "") + cbox(x.id, "Idée à prendre · " + x.titre, x.titre + ". " + x.detail) + "</div></details>"; }).join("") +
+          (function () {
+            var LM = C.lisnard_mieux; if (!LM) return "";
+            var lk = function (s) { return esc(s || "").replace(/N°(\d+)/g, '<a href="#" data-n="$1">N°$1</a>'); };
+            var src = function (s) { return /^https?:\/\//.test(s) ? '<a href="' + esc(s) + '" target="_blank" rel="noopener">' + esc(s.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + "</a>" : esc(s); };
+            var byId = {}; (LM.idees || []).forEach(function (x) { byId[x.id] = x; });
+            var row = function (t, v) { return v ? "<p><b>" + t + ".</b> " + lk(v) + "</p>" : ""; };
+            var h = '<h2 class="h2">Prendre à Lisnard, en mieux (' + (LM.a_voler || []).length + ')</h2><p class="mut">Les idées de David Lisnard qui valent d\'être reprises, dans une version plus solide : mieux ciblée, chiffrée, évaluée. Analyse du groupe, mise à jour le ' + esc(LM.maj || "") + ".</p>";
+            h += (LM.a_voler || []).map(function (v) {
+              var x = byId[v.id] || {}, f = x.faire_mieux || {};
+              return '<details class="mes"><summary><div class="mh">' + badge("x", "Priorité " + v.rang, "x-") + '</div><div class="mt">' + esc(v.idee) + '</div></summary><div class="mb">' +
+                "<p><b>Lisnard.</b> " + esc(x.idee_lisnard || "") + "</p>" +
+                "<p><b>Notre version.</b> " + lk(v.version_meilleure) + "</p>" +
+                (f.titre ? "<h4>" + esc(f.titre) + "</h4>" : "") + row("Mécanisme", f.mecanisme) + row("Coût", f.cout) + row("Ciblage", f.ciblage) + row("Évaluation prévue", f.evaluation_prevue) +
+                row("Preuves", x.preuves) + row("Ailleurs", x.ailleurs) + row("Livret", x.livret) + row("Contraste avec Lisnard", x.contraste) +
+                (x.ligne_30s ? '<p class="pos"><b>En 30 secondes :</b> ' + esc(x.ligne_30s) + "</p>" : "") +
+                ((x.source || []).length ? '<p class="mut">Sources : ' + x.source.map(src).join(" · ") + "</p>" : "") +
+                cbox("lisnard-mieux-" + v.id, "Prendre à Lisnard · " + v.idee, v.idee + ". " + v.version_meilleure) + "</div></details>";
+            }).join("");
+            h += '<h3 class="h2">Les attaques contre Lisnard, vérifiées (' + (LM.fact_check || []).length + ")</h3>" +
+              (LM.fact_check || []).map(function (x) { return '<details class="mes"><summary><div class="mt">' + esc(x.affirmation) + '</div></summary><div class="mb"><p><b>Verdict.</b> ' + esc(x.verdict) + "</p><p><b>Utilisable ?</b> " + esc(x.utilisable) + "</p>" + ((x.sources || []).length ? '<p class="mut">Sources : ' + x.sources.map(src).join(" · ") + "</p>" : "") + "</div></details>"; }).join("");
+            h += '<h3 class="h2">Là où Philippe fait déjà mieux</h3><ul class="lst">' + (LM.philippe_deja_mieux || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + lk(x.livret) + ") : " + lk(x.pourquoi) + "</li>"; }).join("") + "</ul>";
+            return h;
+          })() +
           '<h2 class="h2">Le terrain commun</h2><ul class="lst">' + (CV.convergences_fortes || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + x.qui.map(function (k) { return CN[k] || k; }).join(", ") + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>" +
           '<h2 class="h2">Les vrais désaccords</h2><ul class="lst">' + (CV.desaccords || []).map(function (x) { return "<li><b>" + esc(x.theme) + "</b> (" + esc(CN[x.qui] || x.qui) + ") : " + esc(x.resume) + " " + nl(x.nums) + "</li>"; }).join("") + "</ul>";
       } else $("#p-droite").innerHTML = '<p class="mut">Analyse en cours.</p>';
