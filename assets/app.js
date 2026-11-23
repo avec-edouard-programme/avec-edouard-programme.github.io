@@ -512,7 +512,7 @@
         var nfr = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); };
         var E = TS.elus, PI = TS.pilote, h = "";
         h += '<div class="thead"><h1>Porte-à-porte : la stratégie</h1><p class="lead">' + esc(TS.en_bref) + '</p><p class="tolinks">' + TS.liens.map(function (l) { return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.titre) + "</a>"; }).join(" · ") + '</p><p class="mut">Mis à jour le ' + fdate(TS.maj) + ".</p></div>";
-        h += '<h2 class="h2">Cinq principes</h2><div class="pgrid">' + TS.principes.map(function (p) { return '<div class="box"><h4>' + esc(p.titre) + "</h4><p>" + esc(p.texte) + "</p></div>"; }).join("") + "</div>";
+        h += '<h2 class="h2">Nos principes</h2><div class="pgrid">' + TS.principes.map(function (p) { return '<div class="box"><h4>' + esc(p.titre) + "</h4><p>" + esc(p.texte) + "</p></div>"; }).join("") + "</div>";
         h += '<h2 class="h2">S\'appuyer sur nos maires et le pôle élus</h2><p>' + esc(E.intro) + '</p><div class="box"><ul class="lst">' + E.chiffres.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ul></div>";
         var CE = (AT.cartes || []).filter(function (c) { return c.id === "elus-encadrement"; })[0];
         if (CE) h += '<div class="box carte"><h4>' + esc(CE.titre) + '</h4><p class="mut">' + esc(CE.sous_titre) + "</p>" + CE.svg + "<p>" + esc(CE.lecture) + '</p><p class="mut">Cercles : portes à visiter par département. ' + esc(CE.porte) + "</p></div>";
