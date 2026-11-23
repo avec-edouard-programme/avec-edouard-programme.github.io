@@ -141,7 +141,7 @@
     });
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
-    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["noteia", "Note IA"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
+    var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Retour du porte-à-porte"], ["organisation", "Améliorations organisationnelles"], ["sante26", "Santé : 26 novembre"], ["noteia", "Note IA"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -606,6 +606,30 @@
         '<h2 class="h2">Pourquoi : ce que les midterms nous apprennent</h2>' + why.map(slide).join("");
     } else $("#p-organisation").innerHTML = '<p class="mut">À venir.</p>';
     } catch (e) { console.error("électeurs/organisation", e); }
+    try { // ---------- Santé : 26 novembre (build/patch_sante26.py)
+      var S26 = C.sante26, pS = $("#p-sante26");
+      if (pS && S26) {
+        var h = [], buf = [], fl = function () { if (buf.length) { h.push(md(buf.join("\n"))); buf = []; } };
+        String(S26.md).split(/\n/).forEach(function (l, i) {
+          if (/^# /.test(l)) { fl(); h.push('<div class="thead"><h1>' + inline(l.slice(2)) + "</h1>"); return; }
+          if (/^## /.test(l)) { fl(); h.push('<h2 class="h2">' + inline(l.slice(3)) + "</h2>"); return; }
+          if (/^### /.test(l)) { fl(); h.push("<h4>" + inline(l.slice(4)) + "</h4>"); return; }
+          buf.push(l);
+        });
+        fl();
+        var html = h.join("").replace('</h1>', '</h1><p class="mut">Simulation et propositions du groupe, non validées par le candidat. Sources : personas/debats/sante-26-nov/.</p></div>');
+        var T = S26.test;
+        if (T && T.evaluateur) {
+          html += '<h2 class="h2">Le contrôle du « Philippe » simulé</h2><table class="cmp"><thead><tr><th>Mesure</th><th>Décision</th><th>Preuves</th><th>Ciblage</th><th>Coût-efficacité</th><th>Sa question</th></tr></thead><tbody>' +
+            T.evaluateur.map(function (e) { return "<tr><td>" + esc(e.id) + "</td><td>" + esc(e.decision) + "</td><td>" + e.preuves + "/5</td><td>" + e.ciblage + "/5</td><td>" + e.cout_efficacite + "/5</td><td>" + esc(e.question || "") + "</td></tr>"; }).join("") + "</tbody></table>";
+        }
+        if (T && T.moyennes) {
+          html += '<h2 class="h2">Les électeurs simulés, par axe (de -2 à +2)</h2><table class="cmp"><thead><tr><th>Axe</th><th>Brut</th><th>Pondéré</th></tr></thead><tbody>' +
+            Object.keys(T.moyennes).map(function (k) { var m = T.moyennes[k]; return "<tr><td>" + esc(k) + "</td><td>" + esc(String(m.brut)) + "</td><td>" + esc(String(m.pondere)) + "</td></tr>"; }).join("") + '</tbody></table><p class="mut">Simulation, pas un sondage.</p>';
+        }
+        pS.innerHTML = html;
+      } else if (pS) pS.innerHTML = '<p class="mut">À venir.</p>';
+    } catch (e) { console.error("santé 26", e); }
     try { // ---------- Note IA (notes/2026-11-19-note-IA.md, build/patch_noteia.py)
       var NI = C.note_ia, pNI = $("#p-noteia");
       if (pNI && NI) {
