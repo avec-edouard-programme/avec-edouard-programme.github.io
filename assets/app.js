@@ -876,6 +876,13 @@
           '<div class="hwrap"><table class="heat"><thead><tr><th>Année</th><th>Solde visé</th><th>Effort de l\'année</th><th>Mesures mises en place</th><th>Couvert / à chiffrer</th></tr></thead><tbody>' + (T.annees || []).map(function (y) { return "<tr><th>" + esc(String(y.annee)) + "</th><td>" + esc(y.solde_cible || "") + "</td><td>" + (y.effort_annuel_md != null ? String(y.effort_annuel_md).replace(".", ",") + " Md€" : "") + '</td><td style="text-align:left">' + (y.mesures || []).map(function (m) { return (m.num ? '<a href="#" data-n="' + esc(m.num) + '">N°' + esc(m.num) + "</a> " : "") + esc(m.intitule) + (m.rendement_md != null ? " (" + String(m.rendement_md).replace(".", ",") + " Md€)" : ""); }).join("<br>") + "</td><td>" + (y.couvert_md != null ? String(y.couvert_md).replace(".", ",") + " / " + String(y.ecart_a_chiffrer_md).replace(".", ",") + " Md€" : "") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
           "<p>" + nl(T.bilan) + '</p><p class="mut"><b>Limites.</b> ' + esc(T.limites) + "</p>" + ((T.sources || []).length ? '<details class="in"><summary>Sources (' + T.sources.length + ")</summary><ul>" + T.sources.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></details>" : "");
       })(C.trajectoire) + h;
+      if (t.id === "ia" && C.agenda_ia) h = (function (N) { // note du groupe : cadre, puis sections
+        var q = [], body = [];
+        N.md.split(/\n/).forEach(function (l) { if (/^>\s?/.test(l)) q.push(l.replace(/^>\s?/, "")); else body.push(l); });
+        var parts = body.join("\n").split(/^## /m).filter(function (x) { return x.trim(); });
+        return '<h2 class="h2">' + esc(N.titre) + '</h2><p class="mut">' + esc(N.auteur) + ' · proposition du groupe, non arbitrée</p><div class="box">' + md(q.join("\n")) + "</div>" +
+          parts.map(function (x, i) { var k = x.indexOf("\n"); return '<details class="in"' + (i === 0 ? " open" : "") + "><summary>" + esc(x.slice(0, k)) + "</summary>" + md(x.slice(k + 1)) + "</details>"; }).join("");
+      })(C.agenda_ia) + h;
       if (t.encours) h += '<p class="encours"><b>En cours au groupe :</b> ' + inline(t.encours) + "</p>";
       if (!t.an.length && !h) h = '<p class="mut">Ce thème n\'a pas encore été analysé par le groupe. Les mesures du livret sont dans l\'onglet « Mesures de Philippe ».</p>';
       $("#p-" + t.id + ' [data-p="synthese"]').innerHTML = h;
