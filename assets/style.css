@@ -213,3 +213,14 @@ p.bar{display:flex;justify-content:space-between;margin:2px 0}
 /* atlas : cartes par département (patch_atlas.py) */
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 .carte svg{width:100%;height:auto;display:block;margin:8px 0}
+
+/* organisation et IA (onglet Améliorations organisationnelles) */
+.ri .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin:12px 0}
+.ri .card{border-top:2px solid var(--acc);padding-top:10px;font-size:15px}
+.ri .card .big{font-size:26px;font-weight:600;line-height:1;margin-bottom:6px;color:var(--acc)}
+.ri .card h3{font-size:16px;margin:0 0 4px}
+.ri .card ul{padding-left:18px;margin:4px 0 0}
+.ri .src,.ri .note{color:var(--mut);font-size:13.5px;margin-top:8px}
+.ri table.heat{min-width:600px;width:100%}
+.ri table.heat td,.ri table.heat th{text-align:left;vertical-align:top}
+.ri svg.chart{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
