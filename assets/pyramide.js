@@ -5,9 +5,9 @@
   "use strict";
   var PA = (window.PA = window.PA || { mods: [] });
   PA.mods = PA.mods || [];
-  PA.pages = [["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
+  PA.pages = [["edl", "Par chantier"], ["personas", "Électeurs simulés"], ["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
   PA.routes = {};
-  PA.sansBoite = ["contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
+  PA.sansBoite = ["edl", "personas", "contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
 
   // La correction proposée, mesure par mesure : toujours un texte déjà écrit par le groupe (analyse, élément de langage proposé, leçon étrangère)
   var RP = /(Mieux vaut|Mieux vaudrait|La piste sérieuse|Privilégions|Ciblons|Réservons|Conditionnons|Il faut (?:plutôt|le|reprendre)|Je recommande|Préférer)[^.]*\./;
@@ -61,10 +61,9 @@
     var AN = TH.map(function (t) { return [t.id, t.court]; });
     var EDU = [["ecole", "Mesures du livret"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester"]];
     var G = [
-      { id: "recit", n: "1", t: "Message et diffusion", pages: [["recit", "Le récit"], ["messages", "Messages à débattre"], ["discours", "Discours"], ["reseaux", "Réseaux sociaux"], ["terrain", "Porte-à-porte"]] },
-      { id: "preparation", n: "2", t: "Éléments de langage", pages: [["preparation", "Par priorité"], ["electeurs", "Testés sur électeurs simulés"], ["debats", "Débats simulés"], ["banque", "Électeurs à appeler"], ["fiches", "Ce qui changerait pour…"]] },
-      { id: "priorites", n: "3", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["propositions", "Nouvelles propositions"], ["droite", "Bonnes idées des autres programmes"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["etat", "Un État qui marche"], ["sante26", "Santé"]] },
-      { id: "programmes", n: "4", t: "Programmes au crible", pages: [["programmes", "Tous les programmes"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
+      { id: "edl", n: "1", t: "Éléments de langage", pages: [["edl", "Par chantier"], ["personas", "Électeurs simulés"]] },
+      { id: "priorites", n: "2", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["propositions", "Nouvelles propositions"], ["droite", "Bonnes idées des autres programmes"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"]] },
+      { id: "programmes", n: "3", t: "Programmes au crible", pages: [["programmes", "Par thème"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
       { id: "membres", t: "Équipe", util: 1, pages: [["contexte", "Contexte de travail"], ["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
     ];
@@ -206,14 +205,14 @@
       var SI = C.sources_index || [], nP = SI.filter(function (x) { return x.categorie === "proposition"; }).length, nS = SI.filter(function (x) { return x.categorie === "litterature"; }).length;
       var pers = ((C.electeurs || {}).personas || []).length + (C.banque || []).filter(function (b) { return b.persona !== "multi"; }).length;
       var nR = (C.adversaires || []).length + 1;
+      var CR = (C.chantiers_reunion || { chantiers: [] }).chantiers;
       var ET = [
-        { id: "recit", t: "Message et diffusion", s: "La volonté d\'agir : le récit, les discours, les réseaux sociaux, le porte-à-porte.", c: "" },
-        { id: "preparation", t: "Éléments de langage", s: "Ce qu\'il faut dire sur chaque priorité, éprouvé face aux électeurs simulés.", c: pers + " électeurs simulés" },
-        { id: "priorites", t: "Priorités et nouvelles propositions", s: "Ce qui doit porter la campagne, ce qui manque aux programmes, les bonnes idées à prendre chez les autres.", c: ((C.priorites || {}).proposition || []).length + " priorités proposées" + (nP ? " · " + nP + " propositions" : "") + ((C.notes_groupe || []).length ? " · " + plural(C.notes_groupe.length, "note") + " en discussion" : "") },
-        { id: "programmes", t: "Programmes au crible", s: "Chaque programme analysé mesure par mesure : preuves, coût, exemples étrangers, changements recommandés.", c: nR + " programmes · " + C.philippe.mesures.length + " mesures du livret · " + ctx.analysed.length + " analysées" + (nS ? " · " + nS + " sources" : "") }
+        { id: "edl", t: "Éléments de langage", s: "Ce qu'il faut dire sur les chantiers du groupe, et le programme face aux électeurs simulés.", c: CR.length + " chantiers · " + pers + " électeurs simulés" },
+        { id: "priorites", t: "Priorités et propositions", s: "Ce qui doit porter la campagne, ce qui manque, les bonnes idées à prendre ailleurs.", c: ((C.priorites || {}).proposition || []).length + " priorités" + (nP ? " · " + nP + " propositions" : "") },
+        { id: "programmes", t: "Programmes au crible", s: "Chaque thème, chaque mesure, tous les candidats : preuves, coût, exemples étrangers.", c: nR + " programmes · " + C.philippe.mesures.length + " mesures du livret" + (nS ? " · " + nS + " sources" : "") }
       ];
-      var W = 400, H = 340, n = 4, gap = 7, hh = (H - gap * (n - 1)) / n, x = function (y) { return (W / 2) * (y / H); };
-      var svg = '<svg class="pyr" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Pyramide : message et diffusion, éléments de langage, priorités et propositions, programmes au crible">' + ET.map(function (e, i) {
+      var W = 400, H = 300, n = ET.length, gap = 7, hh = (H - gap * (n - 1)) / n, x = function (y) { return (W / 2) * (y / H); };
+      var svg = '<svg class="pyr" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Pyramide : éléments de langage, priorités et propositions, programmes au crible">' + ET.map(function (e, i) {
         var y0 = i * (hh + gap), y1 = y0 + hh, c = W / 2;
         return '<a href="#' + e.id + '" data-go="' + e.id + '" data-et="' + e.id + '" class="et et' + (i + 1) + '" aria-label="' + esc(e.t) + '"><polygon points="' + [[c - x(y0), y0], [c + x(y0), y0], [c + x(y1), y1], [c - x(y1), y1]].map(function (p) { return p.join(","); }).join(" ") + '"></polygon><text x="' + c + '" y="' + (y0 + hh * (i ? 0.58 : 0.74)) + '" text-anchor="middle">' + (i + 1) + "</text></a>";
       }).join("") + "</svg>";
@@ -226,55 +225,84 @@
     })();
 
 
-    // ---------- 4. tous les programmes au crible (26/11) : chaque candidat sur le même plan
+    // ---------- 3. programmes au crible, par thème (pas par candidat) : un clic par thème, puis par mesure
     (function () {
       var box = el("programmes"); if (!box) return;
-      var P = C.philippe, AD = C.adversaires || [], ms = P.mesures;
-      var bloc = function (x) { return '<div class="lire">' + rich(x, 3) + "</div>"; };
-      var lph = function () {
-        var fx = ms.filter(function (m) { return PA.mieux(m, P.analyses, C); }).length;
-        return '<details class="mes" open><summary><div class="mt">Édouard Philippe : le livret</div><p class="verd">' + ms.length + " mesures · " + ctx.analysed.length + " analysées · " + fx + ' avec un changement recommandé</p></summary><div class="mb">' + ctx.vbar(ms) + "<p>" + ctx.vcounts(ms) + '</p><p><a href="#analyse" data-go="analyse">Ce qu\'il faut changer, thème par thème</a></p></div></details>';
-      };
-      var lad = function (a) {
-        var r = a.riposte || {}, n = (a.themes || []).reduce(function (k, th) { return k + (th.items || []).length; }, 0);
-        return '<details class="mes"><summary><div class="mt">' + esc(a.nom) + '</div><p class="verd">' + esc(a.titre && a.titre !== a.nom ? a.titre : "Revue du programme") + (n ? " · " + n + (n > 1 ? " points analysés" : " point analysé") : "") + (a.source && a.source.maj ? " · " + esc(fdate(a.source.maj)) : "") + '</p></summary><div class="mb">' +
-          (r.en_bref ? "<h4>En bref</h4>" + bloc(r.en_bref) : "") +
-          (a.themes || []).map(function (th) { return '<details class="in"><summary>' + esc(th.theme) + " (" + (th.items || []).length + ")</summary>" + (th.items || []).map(function (it) { return "<h4>" + esc(it.titre) + "</h4>" + bloc(it.texte || ""); }).join("") + "</details>"; }).join("") + "</div></details>";
-      };
-      box.innerHTML = '<div class="thead"><h1>Tous les programmes au crible</h1><p class="mut">Chaque programme est lu avec la même méthode : ce que dit la recherche, ce que ça coûte, ce qu\'on a vu ailleurs. Le but n\'est pas de défendre un camp, c\'est de garder les meilleures idées de chacun et de corriger celles qui ne tiennent pas.</p></div>' +
-        lph() + AD.map(lad).join("") +
-        '<p class="suite"><a href="#droite" data-go="droite">Les bonnes idées à reprendre des autres programmes</a> · <a href="#priorites" data-go="priorites">Étage suivant : priorités et nouvelles propositions</a></p>';
+      var P = C.philippe, ms = P.mesures;
+      box.innerHTML = '<div class="thead"><h1>Programmes au crible</h1><p class="mut">Choisissez un thème : chaque mesure, ce qu\'il faut changer, et ce que proposent les autres candidats.</p></div><div class="thg">' +
+        TH.map(function (th) {
+          var m = ms.filter(function (x) { return x.theme === th.id; }), fx = m.filter(function (x) { return PA.mieux(x, P.analyses, C); }).length;
+          var adv = (th.adv || []).filter(function (x) { return x.items.length || x.fiches.length; });
+          return '<a class="thc" href="#' + th.id + '" data-go="' + th.id + '"><b>' + esc(th.nom) + "</b>" + ctx.vbar(m) + '<span class="kick">' + m.length + " mesures · " + fx + " à changer</span><span class=\"mut\">" + (adv.length ? adv.map(function (x) { return esc(x.a.nom.split(" ").slice(-1)[0]); }).join(" · ") : "autres candidats : à venir") + "</span></a>";
+        }).join("") + "</div>";
     })();
 
 
-    // ---------- test d'un message sur des électeurs simulés (option ; le message est celui du membre)
-    PA.testBox = function (msg, src) {
-      var EL = C.electeurs || { personas: [] };
-      return '<details class="in tstb" data-msg="' + esc(msg) + '" data-src="' + esc(src || "") + '"><summary>Option : tester ce message sur des électeurs simulés</summary><p class="mut">Les électeurs réagissent au message tel que vous l\'avez écrit : ce qui leur parle, ce qui les fait décrocher, leur question. Ils ne le réécrivent pas. Simulation, pas un sondage.</p>' + connexion() +
-        '<p class="filters">' + EL.personas.map(function (p) { return '<label class="chip"><input type="checkbox" value="' + esc(p.id) + '" checked> ' + esc(p.libelle) + "</label>"; }).join(" ") + '</p><details class="in"><summary>Modifier le prompt de l\'électeur (facultatif)</summary><textarea class="tst-prompt" rows="12">' + esc(C.test_prompt || "") + '</textarea></details><p class="filters"><button class="chip tst-go">Tester</button></p><p class="mut tst-msg" role="status"></p><div class="tst-res"></div></details>';
-    };
-    var tstTable = function (v) {
-      return '<p class="mut">' + (v.moyenne_ponderee != null ? "Moyenne pondérée : " + esc(String(v.moyenne_ponderee).replace(".", ",")) + " (de −2 à +2). " : "") + "</p>" + tb0(["Électeur", "Réaction", "Note", "Ce qui parle", "Ce qui fait décrocher", "Sa question"], v.resultats.map(function (r) { return "<tr><td>" + esc(r.libelle) + "</td><td>" + esc(r.reaction) + "</td><td>" + esc(r.note) + "</td><td>" + esc(r.ce_qui_parle || "") + "</td><td>" + esc(r.ce_qui_fait_decrocher || "") + "</td><td>" + esc(r.objection || r.erreur || "") + "</td></tr>"; }));
-    };
-    var tb0 = function (h, rows) { return '<div class="hwrap"><table class="heat txt"><thead><tr>' + h.map(function (x) { return "<th>" + esc(x) + "</th>"; }).join("") + "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>"; };
-    var tstListe = function (box) {
-      var m = box.getAttribute("data-msg"), r = $(".tst-res", box);
-      fils(true).then(function (xs) {
-        var ts = xs.filter(function (x) { return x.type === "test" && x.j.message === m; });
-        r.innerHTML = ts.map(function (x) { return '<details class="in" data-n="' + x.n + '"><summary>Test du ' + esc(fdate(x.date.slice(0, 10))) + " · " + esc(x.j.auteur || "") + (x.rep ? "" : " · en cours") + '</summary><div class="rr"></div></details>'; }).join("");
-        $$("details[data-n]", r).forEach(function (d) { d.addEventListener("toggle", function () { var h = $(".rr", d); if (!d.open || h.innerHTML) return; api("/issues/" + d.getAttribute("data-n") + "/comments").then(function (cs) { var v = null, err = ""; cs.forEach(function (c) { var y = parse(c.body); if (y && y.resultats) v = y; else err = c.body; }); h.innerHTML = v ? tstTable(v) : '<p class="mut">' + esc(err || "Pas encore de résultat.") + "</p>"; }); }); });
-      }, function () { r.innerHTML = ""; });
-    };
-    document.addEventListener("toggle", function (ev) { var d = ev.target; if (d.classList && d.classList.contains("tstb") && d.open) tstListe(d); }, true);
-    document.addEventListener("click", function (ev) {
-      var b = ev.target.closest && ev.target.closest(".tst-go"); if (!b) return;
-      var box = b.closest(".tstb"), out = function (s) { $(".tst-msg", box).textContent = s; };
-      var ids = $$("input[type=checkbox]:checked", box).map(function (x) { return x.value; });
-      if (!ids.length) { out("Choisissez au moins un électeur."); return; }
-      var pr = $(".tst-prompt", box).value, m = box.getAttribute("data-msg");
-      envoi("test", m.slice(0, 80), "Test du message : " + m, { message: m, personas: ids, prompt: pr.trim() === (C.test_prompt || "").trim() ? "" : pr, note: box.getAttribute("data-src") }, out).then(function (x) { if (x) { out("Lancé (n° " + x.number + "). Résultats dans une à deux minutes."); setTimeout(function () { tstListe(box); }, 60000); } });
-    });
 
+    // ---------- aperçu « au crible » d'un ou plusieurs thèmes
+    PA.apercu = function (ids) {
+      var P = C.philippe, SI = C.sources_index || [];
+      ids = ids.filter(function (id, i) { return ctx.thById[id] && ids.indexOf(id) === i; });
+      if (!ids.length) return "";
+      return '<details class="in apc"><summary>Au crible : ' + ids.map(function (id) { return esc(ctx.thById[id].nom); }).join(", ") + "</summary>" + ids.map(function (id) {
+        var th = ctx.thById[id], ms = P.mesures.filter(function (m) { return m.theme === id; });
+        var fx = ms.map(function (m) { return { m: m, x: PA.mieux(m, P.analyses, C) }; }).filter(function (r) { return r.x; }).slice(0, 3);
+        var adv = (th.adv || []).filter(function (x) { return x.items.length || x.fiches.length; });
+        var lit = SI.filter(function (s) { return s.theme === id && s.categorie === "litterature"; }), ty = {};
+        lit.forEach(function (s) { ty[s.type] = (ty[s.type] || 0) + 1; });
+        var ail = ms.filter(function (m) { var a = m.analyses.length ? P.analyses[m.analyses[0]] : null; return a && /Ailleurs/.test((a.detail || "") + (a.fiche || "")) && !/Aucun exemple étranger/.test(a.detail || ""); }).length;
+        return '<div class="apt"><h4>' + esc(th.nom) + "</h4>" +
+          "<p><b>Ce que disent les candidats.</b> Édouard Philippe : " + ms.length + " mesures" + (adv.length ? " · " + adv.map(function (x) { return esc(x.a.nom) + " : " + (x.items.length || x.fiches.length); }).join(" · ") : " · autres candidats : à analyser") + "</p>" + ctx.vbar(ms) +
+          (fx.length ? "<p><b>Ce qu'il faut changer.</b></p><ul>" + fx.map(function (r) { return "<li>N°" + r.m.num + " : " + inline(r.x.t) + "</li>"; }).join("") + "</ul>" : "") +
+          "<p><b>Le socle.</b> " + (ty.causal || 0) + " études causales · " + (ty.rapport || 0) + " rapports publics · " + (ty.descriptif || 0) + " études descriptives · " + (ty["a-classer"] || 0) + " sources à classer · exemple étranger pour " + ail + " mesure" + (ail > 1 ? "s" : "") + " sur " + ms.length + '</p><p><a href="#' + id + '" data-go="' + id + '">Ouvrir le thème</a></p></div>';
+      }).join("") + "</details>";
+    };
+    (function () { // sous chaque priorité du groupe
+      var box = el("priorites"), PR = (C.priorites || {}).proposition || []; if (!box || !PR.length) return;
+      var byNum = ctx.byNum;
+      box.insertAdjacentHTML("beforeend", '<section><h2 class="h2">Les priorités du groupe, au crible</h2>' + PR.map(function (p) {
+        var ids = (p.nums || []).map(function (n) { return byNum[n] && byNum[n].theme; }).filter(Boolean);
+        return '<div class="entree"><b>' + esc(p.rang + ". " + p.titre) + "</b>" + PA.apercu(ids) + "</div>";
+      }).join("") + "</section>");
+    })();
+    // ---------- 1. éléments de langage par chantier (réunion du 15/11), remplis par les notes des membres
+    (function () {
+      var box = el("edl"); if (!box) return;
+      var CR = C.chantiers_reunion || { chantiers: [] }, NG = C.notes_groupe || [];
+      box.innerHTML = '<div class="thead"><h1>Éléments de langage</h1><p class="mut">' + esc(CR.source || "") + "</p></div>" + CR.chantiers.map(function (c) {
+        var ns = NG.filter(function (n) { return n.meta.chantier === c.id; });
+        return '<div class="entree"><b>' + esc(c.nom) + "</b>" + (ns.length ? ns.map(function (n) { var m = n.socle && n.socle.message; return '<span>' + (m && m.une_minute ? "« " + esc(m.une_phrase) + " »" : "Soundbite à écrire") + ' · <a href="#notes/' + esc(n.id) + '" data-go="notes" data-sub="' + esc(n.id) + '">' + esc(n.meta.auteur) + "</a></span>"; }).join("") : '<span class="mut">Vide pour l\'instant.</span>') + PA.apercu(c.themes || []) + "</div>";
+      }).join("");
+    })();
+
+    // ---------- 1. électeurs simulés : les électeurs, et le programme entier face à eux (graphiques)
+    (function () {
+      var box = el("personas"); if (!box) return;
+      var EL = C.electeurs || {}, PS = (EL.personas || []).filter(function (p) { return EL.chantiers_avis && EL.chantiers_avis[p.id]; }), CH = EL.chantiers || [], W = EL.poids || {}, VX = C.voix || {};
+      var col = { "-2": "#c4342d", "-1": "#f0a59b", "0": "#e4e3df", "1": "#86b6ef", "2": "#2a78d6" };
+      var note = function (p, c) { var a = (EL.chantiers_avis[p.id].chantiers || []).filter(function (x) { return x.id === c.id; })[0]; return a || null; };
+      var moy = function (c) { var t = 0, s = 0; PS.forEach(function (p) { var a = note(p, c); if (a && typeof a.note === "number") { var w = W[p.id] || 0; t += w; s += w * a.note; } }); return t ? s / t : null; };
+      var court = function (s) { return String(s).split(",")[0].replace(/^(Jeune |Patron de )/, "").slice(0, 20); };
+      var sg = function (s) { return (s > 0 ? "+" : s < 0 ? "−" : "") + Math.abs(s).toFixed(1).replace(".", ","); };
+      var LW = 250, CW = 30, RH = 26, TOP = 175, LBL = { "-2": "rejet", "-1": "plutôt contre", "0": "neutre", "1": "plutôt pour", "2": "adhésion" };
+      var cases = '<div class="hwrap"><svg class="pmap" viewBox="0 0 ' + (LW + PS.length * (CW + 2) + 60) + " " + (TOP + CH.length * (RH + 2)) + '" role="img" aria-label="Note de chaque électeur pour chaque chantier, de rejet à adhésion">' +
+        PS.map(function (p, k) { var x = LW + k * (CW + 2) + CW / 2; return '<text class="ph" transform="translate(' + x + "," + (TOP - 8) + ') rotate(-55)">' + esc(court(p.libelle)) + "</text>"; }).join("") +
+        '<text class="ph" transform="translate(' + (LW + PS.length * (CW + 2) + 30) + "," + (TOP - 8) + ') rotate(-55)">Moyenne</text>' +
+        CH.map(function (c, r) { var y = TOP + r * (RH + 2), m = moy(c); return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + RH * 0.68) + '" text-anchor="end">' + esc(c.nom) + "</text>" +
+          PS.map(function (p, k) { var a = note(p, c), v = a ? a.note : null; return '<rect x="' + (LW + k * (CW + 2)) + '" y="' + y + '" width="' + CW + '" height="' + RH + '" rx="4" fill="' + (v == null ? "#fcfcfb" : col[String(v)]) + '"><title>' + esc(p.libelle + " · " + c.nom + " : " + (v == null ? "pas d'avis" : LBL[String(v)]) + (a && a.verbatim ? " · " + a.verbatim : "")) + "</title></rect>"; }).join("") +
+          (m == null ? "" : '<text class="nv" x="' + (LW + PS.length * (CW + 2) + 54) + '" y="' + (y + RH * 0.68) + '" text-anchor="end">' + sg(m) + "</text>"); }).join("") + "</svg></div>";
+      var leg = '<svg class="pleg" viewBox="0 0 560 22" role="img" aria-label="Légende">' + ["-2", "-1", "0", "1", "2"].map(function (k, i) { return '<rect x="' + (i * 112) + '" y="5" width="12" height="12" rx="3" fill="' + col[k] + '"></rect><text x="' + (i * 112 + 18) + '" y="15">' + LBL[k] + "</text>"; }).join("") + "</svg>";
+      var rows = CH.map(function (c) { return { c: c, m: moy(c) }; }).filter(function (r) { return r.m != null; }).sort(function (a, b) { return b.m - a.m; });
+      var BW = 300, X0 = LW + BW / 2;
+      var bars = '<svg class="pbars" viewBox="0 0 ' + (LW + BW + 60) + " " + (rows.length * 28 + 8) + '" role="img" aria-label="Moyenne pondérée par chantier, de −2 à +2">' +
+        '<line x1="' + X0 + '" x2="' + X0 + '" y1="0" y2="' + (rows.length * 28 + 8) + '" class="ax"></line>' +
+        rows.map(function (r, i) { var y = 4 + i * 28, w = Math.abs(r.m) / 2 * (BW / 2); return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + 15) + '" text-anchor="end">' + esc(r.c.nom) + '</text><rect x="' + (r.m >= 0 ? X0 : X0 - w) + '" y="' + (y + 3) + '" width="' + Math.max(w, 1) + '" height="16" rx="4" fill="' + (r.m >= 0 ? "#2a78d6" : "#c4342d") + '"><title>' + esc(r.c.nom + " : " + sg(r.m)) + '</title></rect><text class="nv" x="' + (LW + BW + 56) + '" y="' + (y + 15) + '" text-anchor="end">' + sg(r.m) + "</text>"; }).join("") + "</svg>";
+      var cartes = '<div class="elg">' + (EL.personas || []).map(function (p) { var u = VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans · " + esc(String(p.lieu || "").split(",")[0]) + "</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : "") + "</div>"; }).join("") + "</div>";
+      box.innerHTML = '<div class="thead"><h1>Électeurs simulés</h1><p class="mut">Simulation, pas un sondage. Moyenne pondérée par le poids de chaque profil dans la population.</p></div>' +
+        '<section><h2 class="h2">Le programme face aux électeurs</h2>' + bars + "</section>" +
+        '<section><h2 class="h2">Chantier par électeur</h2>' + leg + cases + "</section>" +
+        '<section><h2 class="h2">Les électeurs</h2>' + cartes + '<p class="mut"><a href="#banque" data-go="banque">Créer un électeur</a></p></section>';
+    })();
     // ---------- équipe : contexte de travail, une note à la fois
     PA.ctxBoutons = function (n) {
       if (!n.contexte) return "";
