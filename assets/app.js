@@ -72,7 +72,12 @@
       .then(function () { $("#go").disabled = false; $("#go").textContent = "Ouvrir"; });
   });
   $("#logout").addEventListener("click", function () { sessionStorage.removeItem("pk"); location.hash = ""; location.reload(); });
-  if (sessionStorage.getItem("pk")) getBundle().then(function (b) { return openWithKey(b64d(sessionStorage.getItem("pk")), b); }).then(start).catch(function () { sessionStorage.removeItem("pk"); });
+  // Site ouvert (26/11/2026) : si cle.txt est publié, le site s'ouvre sans code ; sinon, écran de connexion.
+  var ouvrir = function (k) { return getBundle().then(function (b) { return openWithKey(b64d(k), b); }).then(start); };
+  if (sessionStorage.getItem("pk")) ouvrir(sessionStorage.getItem("pk")).catch(function () { sessionStorage.removeItem("pk"); });
+  else fetch("cle.txt", { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("ferme"); return r.text(); })
+    .then(function (k) { k = k.trim(); $("#login").hidden = true; sessionStorage.setItem("pk", k); return ouvrir(k); })
+    .then(function () { $("#logout").hidden = true; }).catch(function () { $("#login").hidden = false; });
 
   // ---------- vocabulaire
   var VLAB = { "solide": "Bien fondée", "bonne-direction": "Bonne direction", "mal-ciblee": "Mal ciblée", "mal-calibree": "Mal calibrée", "mal-concue": "Mal conçue", "a-chiffrer": "À chiffrer", "a-preciser": "À préciser", "analyse-eco": "Analyse économique", "non-analysee": "Non analysée" };

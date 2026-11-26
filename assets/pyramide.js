@@ -61,7 +61,7 @@
     var AN = TH.map(function (t) { return [t.id, t.court]; });
     var EDU = [["ecole", "Mesures du livret"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester"]];
     var G = [
-      { id: "personas", n: "1", t: "Éléments de langage", pages: [["personas", "Électeurs simulés"]] },
+      { id: "personas", n: "1", t: "Électeurs simulés", pages: [["personas", "Électeurs simulés"]] },
       { id: "priorites", n: "2", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["droite", "Bonnes idées des autres programmes"], ["edu-prop", "Éducation"]] },
       { id: "programmes", n: "3", t: "Programmes au crible", pages: [["programmes", "Par thème"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
@@ -206,7 +206,7 @@
       var nR = (C.adversaires || []).length + 1;
       var CR = (C.chantiers_reunion || { chantiers: [] }).chantiers;
       var ET = [
-        { id: "personas", t: "Éléments de langage", s: "Tester un élément de langage en conversation avec un électeur simulé.", c: "" },
+        { id: "personas", t: "Électeurs simulés", s: "Tester un élément de langage en conversation avec un électeur simulé.", c: "" },
         { id: "priorites", t: "Priorités et propositions", s: "Les chantiers du groupe, et les bonnes idées à prendre ailleurs.", c: "" },
         { id: "programmes", t: "Programmes au crible", s: "Chaque thème, chaque mesure, tous les candidats : preuves, coût, exemples étrangers.", c: "" }
       ];
@@ -289,8 +289,8 @@
         '<line x1="' + X0 + '" x2="' + X0 + '" y1="0" y2="' + (rows.length * 28 + 8) + '" class="ax"></line>' +
         rows.map(function (r, i) { var y = 4 + i * 28, w = Math.abs(r.m) / 2 * (BW / 2); return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + 15) + '" text-anchor="end">' + esc(r.c.nom) + '</text><rect x="' + (r.m >= 0 ? X0 : X0 - w) + '" y="' + (y + 3) + '" width="' + Math.max(w, 1) + '" height="16" rx="4" fill="' + (r.m >= 0 ? "#2a78d6" : "#c4342d") + '"><title>' + esc(r.c.nom + " : " + sg(r.m)) + '</title></rect><text class="nv" x="' + (LW + BW + 56) + '" y="' + (y + 15) + '" text-anchor="end">' + sg(r.m) + "</text>"; }).join("") + "</svg>";
       var cartes = '<div class="elg">' + (EL.personas || []).map(function (p) { var u = VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans · " + esc(String(p.lieu || "").split(",")[0]) + "</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : "") + "</div>"; }).join("") + "</div>";
-      box.innerHTML = '<div class="thead"><h1>Électeurs simulés</h1><p class="lead">Des entretiens avec des électeurs simulés par l\'IA : choisissez un électeur, appelez-le, et testez directement un élément de langage. Il réagit avec sa vie, ses préoccupations et son vote, et vous pouvez en discuter avec lui. Simulation, pas un sondage.</p></div>' +
-        cartes + '<p class="mut"><a href="#banque" data-go="banque">Créer un électeur</a></p>';
+      box.innerHTML = '<div class="thead"><h1>Électeurs simulés</h1><p class="lead">Des entretiens avec des électeurs simulés par l\'IA : choisissez un électeur, appelez-le, et testez directement un élément de langage. Il réagit avec sa vie, ses préoccupations et son vote, et vous pouvez en discuter avec lui. Simulation, pas un sondage.</p></div>' + '<p class="cta"><a href="#banque" data-go="banque">Appeler un électeur, ou en créer un</a></p>' +
+        cartes;
       var pg = el("programmes"); if (pg && CH.length) pg.insertAdjacentHTML("beforeend", '<section><h2 class="h2">Le programme face aux électeurs simulés</h2><p class="mut">Moyenne pondérée par le poids de chaque profil dans la population, de −2 (rejet) à +2 (adhésion). Simulation, pas un sondage.</p>' + bars + '</section><section><h2 class="h2">Chantier par électeur</h2>' + leg + cases + "</section>");
     })();
 
@@ -457,7 +457,7 @@
       var cm = (EL.mesures_communes || []).map(function (n) { var v = PS.map(function (p) { var x = (EL.sims[p.id].mesures || []).filter(function (y) { return y.num === n; })[0]; return x ? x.reaction : null; }); return { t: byNum[n].titre.replace(/\.$/, ""), nums: [n], v: v, m: moy(v) }; }).sort(function (a, b) { return (b.m || 0) - (a.m || 0); });
       if (cm.length) h += '<details class="in"><summary>Les dix mesures du livret lues par tous les électeurs</summary>' + tab(cm, "Mesure du livret") + "</details>";
       h += '<p><a href="#banque" data-go="banque">Appeler un électeur, ou en créer un</a></p></section>';
-      var head = $(".thead", el("priorites")); if (head) head.insertAdjacentHTML("afterend", h);
+      // retiré le 26/11/2026 (Adrien) : le bloc « Les priorités à l'épreuve des électeurs simulés » n'est plus affiché
     })();
 
     // ---------- 2. banque d'électeurs et atelier de personas
