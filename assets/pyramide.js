@@ -233,7 +233,7 @@
         TH.map(function (th) {
           var m = ms.filter(function (x) { return x.theme === th.id; }), fx = m.filter(function (x) { return PA.mieux(x, P.analyses, C); }).length;
           var adv = (th.adv || []).filter(function (x) { return x.items.length || x.fiches.length; });
-          return '<a class="thc" href="#' + th.id + '" data-go="' + th.id + '"><b>' + esc(th.nom) + "</b>" + ctx.vbar(m) + '<span class="kick">' + m.length + " mesures · " + fx + " à changer</span><span class=\"mut\">" + (adv.length ? adv.map(function (x) { return esc(x.a.nom.split(" ").slice(-1)[0]); }).join(" · ") : "autres candidats : à venir") + "</span></a>";
+          return '<a class="thc" href="#' + th.id + '" data-go="' + th.id + '"><b>' + esc(th.nom) + "</b>" + ctx.vbar(m) + '<span class="kick">' + m.length + " mesures · " + fx + " à changer</span><span class=\"mut\">" + (adv.length ? adv.map(function (x) { return esc(x.a.nom.replace(/^\S+\s/, "")); }).join(" · ") : "autres candidats : à venir") + "</span></a>";
         }).join("") + "</div>";
     })();
 
@@ -271,7 +271,7 @@
       var CR = C.chantiers_reunion || { chantiers: [] }, NG = C.notes_groupe || [];
       box.innerHTML = '<div class="thead"><h1>Éléments de langage</h1><p class="mut">' + esc(CR.source || "") + "</p></div>" + CR.chantiers.map(function (c) {
         var ns = NG.filter(function (n) { return n.meta.chantier === c.id; });
-        return '<div class="entree"><b>' + esc(c.nom) + "</b>" + (ns.length ? ns.map(function (n) { var m = n.socle && n.socle.message; return '<span>' + (m && m.une_minute ? "« " + esc(m.une_phrase) + " »" : "Soundbite à écrire") + ' · <a href="#notes/' + esc(n.id) + '" data-go="notes" data-sub="' + esc(n.id) + '">' + esc(n.meta.auteur) + "</a></span>"; }).join("") : '<span class="mut">Vide pour l\'instant.</span>') + PA.apercu(c.themes || []) + "</div>";
+        return '<div class="entree"><b>' + esc(c.nom) + "</b>" + (ns.length ? ns.map(function (n) { var m = n.socle && n.socle.message; return '<span>' + (m && m.une_minute ? "« " + esc(m.une_phrase) + " »" : "Soundbite à écrire") + ' · <a href="#notes/' + esc(n.id) + '" data-go="notes" data-sub="' + esc(n.id) + '">' + esc(n.meta.auteur) + "</a></span>"; }).join("") : '<span class="mut">Vide pour l\'instant.</span>') + PA.apercu(c.themes || []) + (c.analyse ? '<details class="in"><summary>Analyse complète : ce que disent les candidats, ce que dit la recherche</summary><div class="lire">' + rich(c.analyse, 1) + "</div></details>" : "") + "</div>";
       }).join("");
     })();
 
