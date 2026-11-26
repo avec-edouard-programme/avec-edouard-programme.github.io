@@ -102,7 +102,7 @@
       if (!jeton()) return Promise.resolve([]);
       if (cache && !force) return cache;
       cache = api("/issues?state=all&per_page=100&sort=created&direction=desc").then(function (xs) {
-        return xs.filter(function (x) { return !x.pull_request; }).map(function (x) { var m = x.title.match(/^\[(commentaire|modification|persona|source|note)\]/); var j = m && parse(x.body); return j ? { type: m[1], n: x.number, ouvert: x.state === "open", date: x.created_at, rep: x.comments, j: j, url: x.html_url } : null; }).filter(Boolean);
+        return xs.filter(function (x) { return !x.pull_request; }).map(function (x) { var m = x.title.match(/^\[(commentaire|modification|persona|source|note|test)\]/); var j = m && parse(x.body); return j ? { type: m[1], n: x.number, ouvert: x.state === "open", date: x.created_at, rep: x.comments, j: j, url: x.html_url } : null; }).filter(Boolean);
       });
       cache.catch(function () { cache = null; });
       return cache;
@@ -246,12 +246,40 @@
         '<p class="suite"><a href="#droite" data-go="droite">Les bonnes idées à reprendre des autres programmes</a> · <a href="#priorites" data-go="priorites">Étage suivant : priorités et nouvelles propositions</a></p>';
     })();
 
+
+    // ---------- test d'un message sur des électeurs simulés (option ; le message est celui du membre)
+    PA.testBox = function (msg, src) {
+      var EL = C.electeurs || { personas: [] };
+      return '<details class="in tstb" data-msg="' + esc(msg) + '" data-src="' + esc(src || "") + '"><summary>Option : tester ce message sur des électeurs simulés</summary><p class="mut">Les électeurs réagissent au message tel que vous l\'avez écrit : ce qui leur parle, ce qui les fait décrocher, leur question. Ils ne le réécrivent pas. Simulation, pas un sondage.</p>' + connexion() +
+        '<p class="filters">' + EL.personas.map(function (p) { return '<label class="chip"><input type="checkbox" value="' + esc(p.id) + '" checked> ' + esc(p.libelle) + "</label>"; }).join(" ") + '</p><details class="in"><summary>Modifier le prompt de l\'électeur (facultatif)</summary><textarea class="tst-prompt" rows="12">' + esc(C.test_prompt || "") + '</textarea></details><p class="filters"><button class="chip tst-go">Tester</button></p><p class="mut tst-msg" role="status"></p><div class="tst-res"></div></details>';
+    };
+    var tstTable = function (v) {
+      return '<p class="mut">' + (v.moyenne_ponderee != null ? "Moyenne pondérée : " + esc(String(v.moyenne_ponderee).replace(".", ",")) + " (de −2 à +2). " : "") + "</p>" + tb0(["Électeur", "Réaction", "Note", "Ce qui parle", "Ce qui fait décrocher", "Sa question"], v.resultats.map(function (r) { return "<tr><td>" + esc(r.libelle) + "</td><td>" + esc(r.reaction) + "</td><td>" + esc(r.note) + "</td><td>" + esc(r.ce_qui_parle || "") + "</td><td>" + esc(r.ce_qui_fait_decrocher || "") + "</td><td>" + esc(r.objection || r.erreur || "") + "</td></tr>"; }));
+    };
+    var tb0 = function (h, rows) { return '<div class="hwrap"><table class="heat txt"><thead><tr>' + h.map(function (x) { return "<th>" + esc(x) + "</th>"; }).join("") + "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>"; };
+    var tstListe = function (box) {
+      var m = box.getAttribute("data-msg"), r = $(".tst-res", box);
+      fils(true).then(function (xs) {
+        var ts = xs.filter(function (x) { return x.type === "test" && x.j.message === m; });
+        r.innerHTML = ts.map(function (x) { return '<details class="in" data-n="' + x.n + '"><summary>Test du ' + esc(fdate(x.date.slice(0, 10))) + " · " + esc(x.j.auteur || "") + (x.rep ? "" : " · en cours") + '</summary><div class="rr"></div></details>'; }).join("");
+        $$("details[data-n]", r).forEach(function (d) { d.addEventListener("toggle", function () { var h = $(".rr", d); if (!d.open || h.innerHTML) return; api("/issues/" + d.getAttribute("data-n") + "/comments").then(function (cs) { var v = null, err = ""; cs.forEach(function (c) { var y = parse(c.body); if (y && y.resultats) v = y; else err = c.body; }); h.innerHTML = v ? tstTable(v) : '<p class="mut">' + esc(err || "Pas encore de résultat.") + "</p>"; }); }); });
+      }, function () { r.innerHTML = ""; });
+    };
+    document.addEventListener("toggle", function (ev) { var d = ev.target; if (d.classList && d.classList.contains("tstb") && d.open) tstListe(d); }, true);
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest && ev.target.closest(".tst-go"); if (!b) return;
+      var box = b.closest(".tstb"), out = function (s) { $(".tst-msg", box).textContent = s; };
+      var ids = $$("input[type=checkbox]:checked", box).map(function (x) { return x.value; });
+      if (!ids.length) { out("Choisissez au moins un électeur."); return; }
+      var pr = $(".tst-prompt", box).value, m = box.getAttribute("data-msg");
+      envoi("test", m.slice(0, 80), "Test du message : " + m, { message: m, personas: ids, prompt: pr.trim() === (C.test_prompt || "").trim() ? "" : pr, note: box.getAttribute("data-src") }, out).then(function (x) { if (x) { out("Lancé (n° " + x.number + "). Résultats dans une à deux minutes."); setTimeout(function () { tstListe(box); }, 60000); } });
+    });
     // ---------- 1. messages à débattre : la phrase d'une minute de chaque note et de chaque priorité (débat sur #general-channel)
     (function () {
       var box = el("messages"); if (!box) return;
       var M = C.messages || [];
       box.innerHTML = '<div class="thead"><h1>Messages à débattre</h1><p class="lead">Ce que le candidat dirait en une minute, sujet par sujet. Chaque message est écrit par l\'auteur de la note, au sommet de sa note sourcée. On débat des messages sur Slack, dans #general-channel ; les notes se discutent ici.</p></div>' +
-        (M.length ? M.map(function (m) { return '<details class="mes"><summary><div class="mt">' + esc(m.phrase) + '</div><p class="verd">' + esc(m.source) + (m.auteur ? " · " + esc(m.auteur) : "") + "</p></summary><div class=\"mb\">" + (m.minute ? '<div class="lire"><p>' + esc(m.minute) + "</p></div>" : '<p class="mut">Pas encore de version d\'une minute.</p>') + '<p><a href="#' + esc(m.lien) + '" data-go="' + esc(m.lien.split("/")[0]) + '"' + (m.lien.indexOf("/") > 0 ? ' data-sub="' + esc(m.lien.split("/")[1]) + '"' : "") + ">Voir la source du message</a></p></div></details>"; }).join("") : '<p class="mut">Aucun message pour l\'instant. Écrivez le vôtre en tête de votre note (« En une phrase » et « Message en une minute »), puis « Vérifier ma note ».</p>');
+        (M.length ? M.map(function (m) { return '<details class="mes"><summary><div class="mt">' + esc(m.phrase) + '</div><p class="verd">' + esc(m.source) + (m.auteur ? " · " + esc(m.auteur) : "") + "</p></summary><div class=\"mb\">" + (m.minute ? '<div class="lire"><p>' + esc(m.minute) + "</p></div>" : '<p class="mut">Pas encore de version d\'une minute.</p>') + PA.testBox(m.minute || m.phrase, m.source) + '<p><a href="#' + esc(m.lien) + '" data-go="' + esc(m.lien.split("/")[0]) + '"' + (m.lien.indexOf("/") > 0 ? ' data-sub="' + esc(m.lien.split("/")[1]) + '"' : "") + ">Voir la source du message</a></p></div></details>"; }).join("") : '<p class="mut">Aucun message pour l\'instant. Écrivez le vôtre en tête de votre note (« En une phrase » et « Message en une minute »), puis « Vérifier ma note ».</p>');
     })();
     // ---------- 1. récit et discours
     var PY = C.pyramide || {};
@@ -375,7 +403,7 @@
 
       var msgNote = function (n) {
         var m = n.socle && n.socle.message; if (!m) return '<p class="mut">Pas encore vérifiée.</p>';
-        return '<section><h2 class="h2">En une phrase</h2><p class="lead2">' + (m.une_phrase ? esc(m.une_phrase) : '<span class="mut">À écrire : « **En une phrase :** … » dans les éléments de langage.</span>') + '</p><h2 class="h2">Le message en une minute</h2>' + (m.une_minute ? '<div class="lire"><p>' + esc(m.une_minute) + '</p></div><p class="mut">' + m.mots + ' mots (160 au plus).</p>' : '<p class="mut">À écrire : une section « Message en une minute », ce que le candidat dirait en une minute.</p>') + '<p class="mut">Le message se débat sur Slack, dans #general-channel, pas la note entière. <a href="#messages" data-go="messages">Tous les messages à débattre</a></p></section>';
+        return '<section><h2 class="h2">En une phrase</h2><p class="lead2">' + (m.une_phrase ? esc(m.une_phrase) : '<span class="mut">À écrire : « **En une phrase :** … » dans les éléments de langage.</span>') + '</p><h2 class="h2">Le message en une minute</h2>' + (m.une_minute ? '<div class="lire"><p>' + esc(m.une_minute) + '</p></div><p class="mut">' + m.mots + ' mots (160 au plus).</p>' : '<p class="mut">À écrire : une section « Message en une minute », ce que le candidat dirait en une minute.</p>') + (m.une_phrase ? PA.testBox(m.une_minute || m.une_phrase, n.meta.titre) : "") + '<p class="mut">Le message se débat sur Slack, dans #general-channel, pas la note entière. <a href="#messages" data-go="messages">Tous les messages à débattre</a></p></section>';
       };
       var socle = function (s) {
         if (!s) return '<p class="mut">Pas encore vérifiée.</p>';
