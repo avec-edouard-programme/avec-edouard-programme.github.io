@@ -5,7 +5,7 @@
   "use strict";
   var PA = (window.PA = window.PA || { mods: [] });
   PA.mods = PA.mods || [];
-  PA.pages = [["contexte", "Contexte partagé"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
+  PA.pages = [["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
   PA.routes = {};
   PA.sansBoite = ["contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
 
@@ -66,7 +66,7 @@
       { id: "priorites", n: "3", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["propositions", "Nouvelles propositions"], ["droite", "Bonnes idées des autres programmes"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["etat", "Un État qui marche"], ["sante26", "Santé"]] },
       { id: "programmes", n: "4", t: "Programmes au crible", pages: [["programmes", "Tous les programmes"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
-      { id: "membres", t: "Équipe", util: 1, pages: [["contexte", "Contexte partagé"], ["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
+      { id: "membres", t: "Équipe", util: 1, pages: [["contexte", "Contexte de travail"], ["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
     ];
     var groupOf = {}; G.forEach(function (g) { g.pages.forEach(function (p) { groupOf[p[0]] = g; }); }); EDU.forEach(function (p) { if (!groupOf[p[0]]) groupOf[p[0]] = G[3]; });
     var nav = document.createElement("nav"); nav.className = "pnav"; nav.setAttribute("aria-label", "Navigation principale");
@@ -275,19 +275,23 @@
       envoi("test", m.slice(0, 80), "Test du message : " + m, { message: m, personas: ids, prompt: pr.trim() === (C.test_prompt || "").trim() ? "" : pr, note: box.getAttribute("data-src") }, out).then(function (x) { if (x) { out("Lancé (n° " + x.number + "). Résultats dans une à deux minutes."); setTimeout(function () { tstListe(box); }, 60000); } });
     });
 
-    // ---------- équipe : contexte partagé (le même point de départ pour chaque membre et chaque agent)
+    // ---------- équipe : contexte de travail, une note à la fois
+    PA.ctxBoutons = function (n) {
+      if (!n.contexte) return "";
+      return '<p class="filters"><button class="chip ctx-cp" data-id="' + esc(n.id) + '">Contexte pour Claude</button> <button class="chip ctx-dl" data-id="' + esc(n.id) + '">Télécharger</button> <span class="mut ctx-m"></span></p>';
+    };
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest && ev.target.closest(".ctx-cp, .ctx-dl"); if (!b) return;
+      var n = (C.notes_groupe || []).filter(function (x) { return x.id === b.getAttribute("data-id"); })[0]; if (!n) return;
+      var m = b.parentNode.querySelector(".ctx-m");
+      if (b.classList.contains("ctx-dl")) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([n.contexte], { type: "text/markdown" })); a.download = "contexte-" + n.id + ".md"; a.click(); return; }
+      navigator.clipboard.writeText(n.contexte).then(function () { m.textContent = "Copié : collez-le au début de votre conversation avec Claude."; }, function () { m.textContent = "Copie impossible : téléchargez-le."; });
+    });
     (function () {
       var box = el("contexte"); if (!box) return;
-      var X = C.contexte || { md: "" };
-      box.innerHTML = '<div class="thead"><h1>Contexte partagé</h1><p class="lead">Le but : que chaque membre, et chaque agent qu\'il lance, commence sa séance de travail au même point : la ligne, les priorités, les notes en cours, ce qui a changé, les règles.</p></div>' +
-        '<section><h2 class="h2">Comment s\'en servir</h2><ol class="etapes">' +
-        '<li><h4>En début de séance</h4><p>Copiez le contexte ci-dessous et collez-le dans Claude (dans un Projet Claude, ajoutez-le aux connaissances du projet). Avec Claude Code ou Codex, clonez le dépôt preparer-lavenir : AGENTS.md y renvoie à ce contexte et aux méthodes du groupe.</p></li>' +
-        '<li><h4>Pendant</h4><p>Travaillez votre note dans le Google Doc du dossier « Notes du groupe » ; vérifiez-la ici (« Vérifier ma note ») contre la littérature et tous les programmes.</p></li>' +
-        '<li><h4>À la fin</h4><p>Postez dans #general-channel votre message d\'une minute, l\'analyse et le lien du Doc (« Copier pour Slack »). On débat du message en fil.</p></li>' +
-        '<li><h4>Chaque matin</h4><p>Le résumé de ce qui a changé sur le site arrive dans #general-channel, et ce contexte est mis à jour.</p></li></ol></section>' +
-        '<section><h2 class="h2">Le contexte du jour</h2><p class="filters"><button class="chip" id="cx-copie">Copier pour Claude</button> <button class="chip" id="cx-dl">Télécharger (contexte.md)</button></p><p class="mut" id="cx-m" role="status"></p><div class="lire">' + rich(X.md || "", 1) + "</div></section>";
-      $("#cx-copie", box).addEventListener("click", function () { navigator.clipboard.writeText(X.md || "").then(function () { $("#cx-m", box).textContent = "Copié."; }, function () { $("#cx-m", box).textContent = "Copie impossible : téléchargez le fichier."; }); });
-      $("#cx-dl", box).addEventListener("click", function () { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([X.md || ""], { type: "text/markdown" })); a.download = "contexte-preparer-lavenir.md"; a.click(); });
+      var N = (C.notes_groupe || []).filter(function (n) { return n.contexte; });
+      box.innerHTML = '<div class="thead"><h1>Contexte de travail</h1><p class="lead">Pour reprendre une note avec Claude : seulement ce qui sert à cette note. En tête, ce qu\'en disent les autres (Slack et commentaires du site, résumés, jamais intégrés) ; puis ce qui manque, le socle utile et le texte.</p><p class="mut">Avec Claude Code ou Codex dans le dépôt preparer-lavenir, dites « je travaille sur » suivi du titre : le contexte de la note se charge tout seul. Dans l\'application Claude, copiez-le ci-dessous.</p></div>' +
+        (N.length ? N.map(function (n) { return '<div class="entree"><span class="kick">' + esc(n.meta.auteur) + '</span><b>' + esc(n.meta.titre) + "</b>" + PA.ctxBoutons(n) + "</div>"; }).join("") : '<p class="mut">Aucune note en cours.</p>');
     })();
     // ---------- 1. messages à débattre : la phrase d'une minute de chaque note et de chaque priorité (débat sur #general-channel)
     (function () {
@@ -447,7 +451,7 @@
         mesNotes(); };
       var page = function (n) {
         var th = TH.filter(function (t) { return t.id === n.meta.theme; })[0];
-        box.innerHTML = '<p class="fil"><a href="#notes" data-go="notes">Notes en discussion</a>' + (th ? ' · <a href="#' + th.id + '" data-go="' + th.id + '">' + esc(th.nom) + "</a>" : "") + '</p><div class="thead"><h1>' + esc(n.meta.titre) + '</h1><p class="kick">' + esc(n.meta.auteur) + " · " + esc(fdate(n.maj)) + (n.meta.version ? " · version " + esc(n.meta.version) : "") + '</p></div><p class="mut">Une note se lit comme la pyramide : en haut le message d\'une minute, au milieu la note, en bas le socle (littérature et programmes de tous les partis).</p><nav class="subtabs nt"><button data-v="message">1. Le message</button><button data-v="note" aria-selected="true">2. La note</button><button data-v="place">3. Face aux programmes</button><button data-v="socle">4. Le socle</button><button data-v="verif">Vérification</button>' + (n.avant ? '<button data-v="avant">Version de l\'auteur</button>' : "") + '</nav><div data-nv="message" hidden>' + msgNote(n) + '</div><div data-nv="socle" hidden>' + socle(n.socle) + '</div><div data-nv="note"></div><div data-nv="place" hidden>' + place(n.place) + '</div><div data-nv="verif" hidden>' + verif(n.verif) + '</div><div data-nv="avant" hidden><p class="mut">Texte reçu de l\'auteur, inchangé.</p><div class="lire">' + rich(n.avant || "", 1) + "</div></div>";
+        box.innerHTML = '<p class="fil"><a href="#notes" data-go="notes">Notes en discussion</a>' + (th ? ' · <a href="#' + th.id + '" data-go="' + th.id + '">' + esc(th.nom) + "</a>" : "") + '</p><div class="thead"><h1>' + esc(n.meta.titre) + '</h1><p class="kick">' + esc(n.meta.auteur) + " · " + esc(fdate(n.maj)) + (n.meta.version ? " · version " + esc(n.meta.version) : "") + '</p></div>' + PA.ctxBoutons(n) + '<p class="mut">Une note se lit comme la pyramide : en haut le message d\'une minute, au milieu la note, en bas le socle (littérature et programmes de tous les partis).</p><nav class="subtabs nt"><button data-v="message">1. Le message</button><button data-v="note" aria-selected="true">2. La note</button><button data-v="place">3. Face aux programmes</button><button data-v="socle">4. Le socle</button><button data-v="verif">Vérification</button>' + (n.avant ? '<button data-v="avant">Version de l\'auteur</button>' : "") + '</nav><div data-nv="message" hidden>' + msgNote(n) + '</div><div data-nv="socle" hidden>' + socle(n.socle) + '</div><div data-nv="note"></div><div data-nv="place" hidden>' + place(n.place) + '</div><div data-nv="verif" hidden>' + verif(n.verif) + '</div><div data-nv="avant" hidden><p class="mut">Texte reçu de l\'auteur, inchangé.</p><div class="lire">' + rich(n.avant || "", 1) + "</div></div>";
         doc($('[data-nv="note"]', box), { id: n.id, titre: n.meta.titre, fichier: n.fichier, md: n.md });
         $$(".nt button", box).forEach(function (b) { b.addEventListener("click", function () { $$(".nt button", box).forEach(function (c) { c.setAttribute("aria-selected", c === b); }); $$("[data-nv]", box).forEach(function (x) { x.hidden = x.getAttribute("data-nv") !== b.getAttribute("data-v"); }); }); });
       };
