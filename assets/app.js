@@ -95,7 +95,7 @@
   var plural = function (n, s) { return n + " " + s + (n > 1 ? "s" : ""); };
 
   function start(C) {
-    $("#login").hidden = true; $("#logout").hidden = false; $("#tabs").hidden = false; $("#gq").hidden = false;
+    $("#login").hidden = true; $("#logout").hidden = false; $("#gq").hidden = false; document.body.classList.add("ouvert");
     var app = $("#app"); app.hidden = false;
     var P = C.philippe, A = C.adversaires, anal = P.analyses, AT = C.attaques, TH = C.themes, SE = C.sensibilite || {};
     var RIV = AT ? AT.rivaux : [];
@@ -142,6 +142,8 @@
 
     // ---------- navigation : Accueil, un onglet par thème, Méthode
     var NAV = [["accueil", "Accueil"], ["priorites", "Priorités"], ["droite", "Convergences à droite"], ["etat", "Un État qui marche"], ["preparation", "Préparation"], ["electeurs", "Électeurs simulés"], ["debats", "Débats simulés"], ["terrain", "Porte-à-porte : stratégie"], ["organisation", "Améliorations organisationnelles"], ["sante26", "Santé : 26 novembre"], ["noteia", "Note IA"], ["chiffrage", "Chiffrage"], ["fiches", "Fiches"]].concat(TH.map(function (t) { return [t.id, t.court]; })).concat([["membres", "Membres"], ["methode", "Méthode"]]);
+    var PAX = window.PA || { mods: [] };
+    (PAX.pages || []).forEach(function (x) { NAV.push(x); });
     // ---------- Commentaires et suivi des modifications (Édouard Philippe) : brouillon local, envoi par courriel, affichage « track changes »
     var CK = "programmes2027-cmt:", CM = (C.commentaires && C.commentaires.items) || [];
     var wdiff = function (a, b) {
@@ -169,12 +171,13 @@
     var who = function () { try { return JSON.parse(localStorage.getItem(CID) || "null"); } catch (e) { return null; } };
     var cSend = function () {
       var all = cAll(); if (!all.length) return; var w = who();
+      if (PAX.envoyer && PAX.envoyer(all, w)) return;
       var body = "Commentaires sur le site Programmes 2027 (" + new Date().toLocaleDateString("fr-FR") + ")" + (w ? "\nDe : " + w.nom + (w.role ? " (" + w.role + ")" : "") : "") + "\n\n" + all.map(function (c) { return "### " + c.id + " | " + c.label + "\nTexte initial : " + c.texte + "\nVersion proposée : " + c.version + (c.commentaire ? "\nCommentaire : " + c.commentaire : ""); }).join("\n\n") + "\n\n--- format machine ---\n" + JSON.stringify({ auteur: w, items: all });
       if (navigator.clipboard) navigator.clipboard.writeText(body).catch(function () {});
       var dest = (C.config && C.config.commentaires_dest) || "";
       location.href = "mailto:" + dest + "?subject=" + encodeURIComponent("[Programmes 2027] Commentaires") + "&body=" + encodeURIComponent(body.length > 1800 ? body.slice(0, 1800) + "\n[Texte complet copié dans le presse-papiers : collez-le ici.]" : body);
     };
-    $("#tabs").innerHTML = NAV.map(function (s) { var t = thById[s[0]]; return '<button class="tab" role="tab" id="t-' + s[0] + '">' + esc(s[1]) + "" + "</button>"; }).join("");
+    $("#tabs").hidden = true; $("#tabs").innerHTML = NAV.map(function (s) { var t = thById[s[0]]; return '<button class="tab" role="tab" id="t-' + s[0] + '">' + esc(s[1]) + "" + "</button>"; }).join("");
     app.innerHTML = NAV.map(function (s) { return '<section class="panel" role="tabpanel" id="p-' + s[0] + '" hidden></section>'; }).join("") + '<section class="panel" id="p-recherche" hidden></section>';
     var cur = null;
     function go(id, sub, num) {
@@ -182,8 +185,10 @@
       $$(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.id === "t-" + id); });
       $$("#app > .panel").forEach(function (p) { p.hidden = p.id !== "p-" + id; });
       cur = id;
-      if (thById[id]) showSub(id, sub || "synthese");
-      var nh = "#" + id + (thById[id] && sub && sub !== "synthese" ? "/" + sub : ""); if (location.hash !== nh) history.pushState(null, "", nh);
+      if (thById[id]) showSub(id, sub || "changer");
+      var rt = (PAX.routes || {})[id]; if (rt) rt(sub);
+      if (PAX.onGo) PAX.onGo(id, sub);
+      var nh = "#" + id + ((rt && sub) || (thById[id] && sub && sub !== "changer") ? "/" + sub : ""); if (location.hash !== nh) history.pushState(null, "", nh);
       if (num != null) { var el = $("#m" + num); if (el) { el.open = true; el.scrollIntoView({ block: "start" }); return; } }
       window.scrollTo(0, 0);
     }
@@ -206,7 +211,7 @@
     };
     function card(m) {
       var h = '<details class="mes v-' + m._v[0] + '" id="m' + m.num + '"><summary><div class="mh"><span class="num">N°' + m.num + "</span>" + badge(m._v[0]) + (m._e && ELAB[m._e.ecart] ? badge(m._e.ecart, ELAB[m._e.ecart], "e-") : "") + sensB(m) + (PHN[m.num] ? badge("phare", "Mesure phare jeunes", "x-") : "") + "</div>" +
-        '<div class="mt">' + esc(m.titre) + "</div>";
+        '<div class="mt">' + esc(m.titre) + "</div>" + (window.PA && window.PA.mieuxHtml ? window.PA.mieuxHtml(m, anal, inline, C) : "");
       var one = m.analyses.length ? firstSentence(anal[m.analyses[0]].fiche || anal[m.analyses[0]].detail) : "";
       if (one) h += '<p class="verd">' + inline(one) + "</p>";
       h += "</summary><div class=\"mb\">";
@@ -438,7 +443,7 @@
         (((C.boucle_messages || {}).propositions_sante) || []).forEach(function (p) { idees.push({ src: "groupe", titre: p.titre, detail: p.mecanisme, eval: "proposition du groupe (santé, absente du livret)", preuves: p.preuves, nums: [], id: "sante-" + p.id }); });
         var cnt = function (k, pos) { return Object.keys(CV.par_mesure || {}).filter(function (n) { return CV.par_mesure[n][k] && CV.par_mesure[n][k].position === pos; }).length; };
         var nl = function (ns) { return (ns || []).map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", "); };
-        $("#p-droite").innerHTML = '<div class="thead"><h1>Convergences à droite</h1><p class="mut">En cinq minutes : les bonnes idées de David Lisnard, de Bruno Retailleau et de notre groupe qui manquent au livret, le terrain commun pour rassembler, et les vrais désaccords. Positions tirées de leurs déclarations publiques sourcées ; évaluations du groupe selon les mêmes critères que pour le livret. ' + esc(CV.limites || "") + "</p></div>" +
+        $("#p-droite").innerHTML = '<div class="thead"><h1>Bonnes idées des autres programmes</h1><p class="mut">En cinq minutes : les bonnes idées de David Lisnard, de Bruno Retailleau et de notre groupe qui manquent au livret, le terrain commun pour rassembler, et les vrais désaccords. Positions tirées de leurs déclarations publiques sourcées ; évaluations du groupe selon les mêmes critères que pour le livret. ' + esc(CV.limites || "") + "</p></div>" +
           '<div class="pgrid">' + ["lisnard", "retailleau"].map(function (k) { return '<div class="box"><h4>' + CN[k] + "</h4><p>" + cnt(k, "proche") + " mesures du livret proches, " + cnt(k, "partiel") + " en partie, " + cnt(k, "oppose") + " opposées</p></div>"; }).join("") + "</div>" +
           '<h2 class="h2">Les bonnes idées à prendre, d\'où qu\'elles viennent (' + idees.length + ")</h2>" +
           idees.map(function (x) { return '<details class="mes"><summary><div class="mh">' + badge("x", CN[x.src] || x.src, "x-") + badge("x", x.eval, "x-") + '</div><div class="mt">' + esc(x.titre) + '</div></summary><div class="mb"><p>' + esc(x.detail) + "</p><p><b>Preuves.</b> " + esc(x.preuves) + "</p>" + (x.nums.length ? '<p class="mut">Mesures du livret liées : ' + nl(x.nums) + "</p>" : "") + (x.url ? '<p class="mut"><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.source || "source") + "</a></p>" : "") + cbox(x.id, "Idée à prendre · " + x.titre, x.titre + ". " + x.detail) + "</div></details>"; }).join("") +
@@ -820,7 +825,7 @@
     }
     } catch (e) { console.error("[site] bloc fiches", e); var _p = document.getElementById("p-fiches"); if (_p) _p.innerHTML = '<p class="mut">Cette section n\'a pas pu s\'afficher.</p>'; }
     // ---------- pages thème
-    var SUBS = [["synthese", "Synthèse"], ["mesures", "Mesures de Philippe"], ["adversaires", "Face aux adversaires"]];
+    var SUBS = [["changer", "Ce qu'il faut changer"], ["mesures", "Toutes les mesures"], ["adversaires", "Face aux adversaires"], ["synthese", "Contexte"]];
     var tst = {};
     TH.forEach(function (t) {
       tst[t.id] = { v: null, s: null, onlyA: t.an.length > 0 };
@@ -988,7 +993,7 @@
         (as.length ? '<h2 class="h2">Programmes adverses</h2><ul class="lst">' + as.slice(0, 60).map(function (x) { return '<li><a href="#" data-go="' + x.t + '" data-sub="adversaires" data-r="' + rid(x.titre) + '">' + esc(x.titre) + '</a> <span class="mut">· ' + esc(x.a.nom) + " · " + esc(thById[x.t].court) + "</span></li>"; }).join("") + "</ul>" : "");
     });
 
-    $$("#app > .panel").forEach(function (p) { if (p.id === "p-recherche" || p.querySelector(".pgcmt")) return; var t = $("#t-" + p.id.slice(2)); var lab = t ? t.textContent : p.id; var d = document.createElement("div"); d.className = "pgcmt"; d.innerHTML = cbox("page-" + p.id.slice(2), "Commentaire ou recommandation sur l'onglet « " + lab + " »", "").replace("Modifier ou commenter", "Commenter cette page ou faire une recommandation"); p.insertBefore(d, p.firstChild); });
+    $$("#app > .panel").forEach(function (p) { if (p.id === "p-recherche" || p.querySelector(".pgcmt") || (PAX.sansBoite || []).indexOf(p.id.slice(2)) >= 0) return; var t = $("#t-" + p.id.slice(2)); var lab = t ? t.textContent : p.id; var d = document.createElement("div"); d.className = "pgcmt"; d.innerHTML = cbox("page-" + p.id.slice(2), "Commentaire ou recommandation sur l'onglet « " + lab + " »", "").replace("Modifier ou commenter", "Commenter cette page ou faire une recommandation"); p.appendChild(d); });
     document.addEventListener("click", function (ev) {
       var t = ev.target; if (!t || !t.closest) return;
       var cb = t.closest(".cmt"); if (cb && t.closest("button")) {
@@ -1001,6 +1006,8 @@
       var n = t.closest("[data-n]"); if (n) { ev.preventDefault(); var m = byNum[+n.getAttribute("data-n")]; $("#gq").value = ""; tst[m.theme].v = tst[m.theme].s = null; if (!m.analyses.length) tst[m.theme].onlyA = false; renderMes(thById[m.theme]); go(m.theme, "mesures", m.num); return; }
       var g = t.closest("[data-go]"); if (g) { ev.preventDefault(); $("#gq").value = ""; go(g.getAttribute("data-go"), g.getAttribute("data-sub")); var r = g.getAttribute("data-r") && document.getElementById(g.getAttribute("data-r")); if (r) { r.open = true; r.scrollIntoView({ block: "start" }); } }
     });
+    var ctx = { C: C, $: $, $$: $$, esc: esc, md: md, inline: inline, badge: badge, byNum: byNum, thById: thById, TH: TH, card: card, go: go, norm: norm, mt: mt, plural: plural, fdate: fdate, days: days, ELECTION: ELECTION, wdiff: wdiff, cbox: cbox, who: who, vbar: vbar, vcounts: vcounts, firstSentence: firstSentence, RIV: RIV, vOf: vOf, VLAB: VLAB, isBad: isBad, isSol: isSol, analysed: analysed };
+    (PAX.mods || []).forEach(function (f) { try { f(ctx); } catch (e) { console.error("[pyramide]", e); } });
     $$("[data-f]").forEach(function (el) { el.style.flex = el.getAttribute("data-f"); });
     $$("[data-w]").forEach(function (el) { el.style.width = el.getAttribute("data-w") + "%"; });
     var fromHash = function () { var h = location.hash.slice(1).split("/"); go(h[0] || "accueil", h[1]); };
