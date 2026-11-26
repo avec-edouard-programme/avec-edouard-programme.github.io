@@ -5,9 +5,9 @@
   "use strict";
   var PA = (window.PA = window.PA || { mods: [] });
   PA.mods = PA.mods || [];
-  PA.pages = [["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
+  PA.pages = [["contexte", "Contexte partagé"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
   PA.routes = {};
-  PA.sansBoite = ["messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
+  PA.sansBoite = ["contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
 
   // La correction proposée, mesure par mesure : toujours un texte déjà écrit par le groupe (analyse, élément de langage proposé, leçon étrangère)
   var RP = /(Mieux vaut|Mieux vaudrait|La piste sérieuse|Privilégions|Ciblons|Réservons|Conditionnons|Il faut (?:plutôt|le|reprendre)|Je recommande|Préférer)[^.]*\./;
@@ -66,7 +66,7 @@
       { id: "priorites", n: "3", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["propositions", "Nouvelles propositions"], ["droite", "Bonnes idées des autres programmes"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["etat", "Un État qui marche"], ["sante26", "Santé"]] },
       { id: "programmes", n: "4", t: "Programmes au crible", pages: [["programmes", "Tous les programmes"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
-      { id: "membres", t: "Équipe", util: 1, pages: [["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
+      { id: "membres", t: "Équipe", util: 1, pages: [["contexte", "Contexte partagé"], ["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
     ];
     var groupOf = {}; G.forEach(function (g) { g.pages.forEach(function (p) { groupOf[p[0]] = g; }); }); EDU.forEach(function (p) { if (!groupOf[p[0]]) groupOf[p[0]] = G[3]; });
     var nav = document.createElement("nav"); nav.className = "pnav"; nav.setAttribute("aria-label", "Navigation principale");
@@ -274,6 +274,21 @@
       var pr = $(".tst-prompt", box).value, m = box.getAttribute("data-msg");
       envoi("test", m.slice(0, 80), "Test du message : " + m, { message: m, personas: ids, prompt: pr.trim() === (C.test_prompt || "").trim() ? "" : pr, note: box.getAttribute("data-src") }, out).then(function (x) { if (x) { out("Lancé (n° " + x.number + "). Résultats dans une à deux minutes."); setTimeout(function () { tstListe(box); }, 60000); } });
     });
+
+    // ---------- équipe : contexte partagé (le même point de départ pour chaque membre et chaque agent)
+    (function () {
+      var box = el("contexte"); if (!box) return;
+      var X = C.contexte || { md: "" };
+      box.innerHTML = '<div class="thead"><h1>Contexte partagé</h1><p class="lead">Le but : que chaque membre, et chaque agent qu\'il lance, commence sa séance de travail au même point : la ligne, les priorités, les notes en cours, ce qui a changé, les règles.</p></div>' +
+        '<section><h2 class="h2">Comment s\'en servir</h2><ol class="etapes">' +
+        '<li><h4>En début de séance</h4><p>Copiez le contexte ci-dessous et collez-le dans Claude (dans un Projet Claude, ajoutez-le aux connaissances du projet). Avec Claude Code ou Codex, clonez le dépôt preparer-lavenir : AGENTS.md y renvoie à ce contexte et aux méthodes du groupe.</p></li>' +
+        '<li><h4>Pendant</h4><p>Travaillez votre note dans le Google Doc du dossier « Notes du groupe » ; vérifiez-la ici (« Vérifier ma note ») contre la littérature et tous les programmes.</p></li>' +
+        '<li><h4>À la fin</h4><p>Postez dans #general-channel votre message d\'une minute, l\'analyse et le lien du Doc (« Copier pour Slack »). On débat du message en fil.</p></li>' +
+        '<li><h4>Chaque matin</h4><p>Le résumé de ce qui a changé sur le site arrive dans #general-channel, et ce contexte est mis à jour.</p></li></ol></section>' +
+        '<section><h2 class="h2">Le contexte du jour</h2><p class="filters"><button class="chip" id="cx-copie">Copier pour Claude</button> <button class="chip" id="cx-dl">Télécharger (contexte.md)</button></p><p class="mut" id="cx-m" role="status"></p><div class="lire">' + rich(X.md || "", 1) + "</div></section>";
+      $("#cx-copie", box).addEventListener("click", function () { navigator.clipboard.writeText(X.md || "").then(function () { $("#cx-m", box).textContent = "Copié."; }, function () { $("#cx-m", box).textContent = "Copie impossible : téléchargez le fichier."; }); });
+      $("#cx-dl", box).addEventListener("click", function () { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([X.md || ""], { type: "text/markdown" })); a.download = "contexte-preparer-lavenir.md"; a.click(); });
+    })();
     // ---------- 1. messages à débattre : la phrase d'une minute de chaque note et de chaque priorité (débat sur #general-channel)
     (function () {
       var box = el("messages"); if (!box) return;
