@@ -387,7 +387,7 @@
           h += '<section><h2 class="h2">3. Le programme face aux acteurs de l\'école</h2><p class="mut">Électeurs simulés, pas un sondage : chacun juge les mesures qui le concernent, de −2 (rejet) à +2 (adhésion).</p>' +
             PA.heatLeg(["rejet", "plutôt contre", "neutre", "plutôt pour", "adhésion"]) +
             PA.heat((EP.themes || []).map(function (t) { return [t.id, t.nom]; }), EP.personas.map(function (p) { return [p.id, p.libelle]; }), function (r, c) { var v = ((EP.matrice || {})[r[0]] || {})[c[0]]; return v == null ? null : v; }, function (r, c, v) { return c[1] + " · " + r[1] + " : " + (v == null ? "pas concerné" : String(v).replace(".", ",")); }, "Réaction de chaque acteur de l'école à chaque partie du programme") +
-            '<div class="elg">' + EP.personas.map(function (p) { var u = VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : '<p class="mut"><a href="#banque" data-go="banque">Créer l\'agent vocal</a></p>') + "</div>"; }).join("") + "</div></section>";
+            '<div class="elg">' + EP.personas.map(function (p) { var u = p.lien || VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : '<p class="mut"><a href="#banque" data-go="banque">Créer l\'agent vocal</a></p>') + "</div>"; }).join("") + "</div></section>";
         }
         var A = E.adversaires;
         if (A && A.candidats && A.axes) {
