@@ -5,7 +5,7 @@
   "use strict";
   var PA = (window.PA = window.PA || { mods: [] });
   PA.mods = PA.mods || [];
-  PA.pages = [["edl", "Par chantier"], ["personas", "Électeurs simulés"], ["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
+  PA.pages = [["personas", "Électeurs simulés"], ["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
   PA.routes = {};
   PA.sansBoite = ["edl", "personas", "contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
 
@@ -61,11 +61,11 @@
     var AN = TH.map(function (t) { return [t.id, t.court]; });
     var EDU = [["ecole", "Mesures du livret"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester"]];
     var G = [
-      { id: "edl", n: "1", t: "Éléments de langage", pages: [["edl", "Par chantier"], ["personas", "Électeurs simulés"]] },
-      { id: "priorites", n: "2", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["propositions", "Nouvelles propositions"], ["droite", "Bonnes idées des autres programmes"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"]] },
+      { id: "personas", n: "1", t: "Éléments de langage", pages: [["personas", "Électeurs simulés"]] },
+      { id: "priorites", n: "2", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["droite", "Bonnes idées des autres programmes"], ["edu-prop", "Éducation"]] },
       { id: "programmes", n: "3", t: "Programmes au crible", pages: [["programmes", "Par thème"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
-      { id: "membres", t: "Équipe", util: 1, pages: [["contexte", "Contexte de travail"], ["membres", "Membres"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
+      { id: "membres", t: "Équipe", util: 1, pages: [["membres", "Membres"], ["notes", "Notes en discussion"], ["contexte", "Contexte de travail"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
     ];
     var groupOf = {}; G.forEach(function (g) { g.pages.forEach(function (p) { groupOf[p[0]] = g; }); }); EDU.forEach(function (p) { if (!groupOf[p[0]]) groupOf[p[0]] = G[3]; });
     var nav = document.createElement("nav"); nav.className = "pnav"; nav.setAttribute("aria-label", "Navigation principale");
@@ -81,7 +81,6 @@
       var isEdu = EDU.some(function (p) { return p[0] === id; });
       var h = "";
       if (g && g.pages.length > 1) h += row(g.pages, isEdu ? "ecole" : id, "psub1");
-      if (isEdu) h += row(EDU, id, "psub2");
       sub.innerHTML = h; sub.hidden = !h;
     };
     var brand = $(".brand"); if (brand) { brand.setAttribute("data-go", "accueil"); brand.setAttribute("role", "link"); brand.tabIndex = 0; brand.addEventListener("keydown", function (e) { if (e.key === "Enter") go("accueil"); }); }
@@ -207,9 +206,9 @@
       var nR = (C.adversaires || []).length + 1;
       var CR = (C.chantiers_reunion || { chantiers: [] }).chantiers;
       var ET = [
-        { id: "edl", t: "Éléments de langage", s: "Ce qu'il faut dire sur les chantiers du groupe, et le programme face aux électeurs simulés.", c: CR.length + " chantiers · " + pers + " électeurs simulés" },
-        { id: "priorites", t: "Priorités et propositions", s: "Ce qui doit porter la campagne, ce qui manque, les bonnes idées à prendre ailleurs.", c: ((C.priorites || {}).proposition || []).length + " priorités" + (nP ? " · " + nP + " propositions" : "") },
-        { id: "programmes", t: "Programmes au crible", s: "Chaque thème, chaque mesure, tous les candidats : preuves, coût, exemples étrangers.", c: nR + " programmes · " + C.philippe.mesures.length + " mesures du livret" + (nS ? " · " + nS + " sources" : "") }
+        { id: "personas", t: "Éléments de langage", s: "Tester un élément de langage en conversation avec un électeur simulé.", c: "" },
+        { id: "priorites", t: "Priorités et propositions", s: "Les chantiers du groupe, et les bonnes idées à prendre ailleurs.", c: "" },
+        { id: "programmes", t: "Programmes au crible", s: "Chaque thème, chaque mesure, tous les candidats : preuves, coût, exemples étrangers.", c: "" }
       ];
       var W = 400, H = 300, n = ET.length, gap = 7, hh = (H - gap * (n - 1)) / n, x = function (y) { return (W / 2) * (y / H); };
       var svg = '<svg class="pyr" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Pyramide : éléments de langage, priorités et propositions, programmes au crible">' + ET.map(function (e, i) {
@@ -233,7 +232,7 @@
         TH.map(function (th) {
           var m = ms.filter(function (x) { return x.theme === th.id; }), fx = m.filter(function (x) { return PA.mieux(x, P.analyses, C); }).length;
           var adv = (th.adv || []).filter(function (x) { return x.items.length || x.fiches.length; });
-          return '<a class="thc" href="#' + th.id + '" data-go="' + th.id + '"><b>' + esc(th.nom) + "</b>" + ctx.vbar(m) + '<span class="kick">' + m.length + " mesures · " + fx + " à changer</span><span class=\"mut\">" + (adv.length ? adv.map(function (x) { return esc(x.a.nom.replace(/^\S+\s/, "")); }).join(" · ") : "autres candidats : à venir") + "</span></a>";
+          return '<a class="thc" href="#' + th.id + '" data-go="' + th.id + '"><b>' + esc(th.nom) + "</b>" + ctx.vbar(m) + '<span class="kick">' + m.length + " mesures · " + fx + " à changer</span></a>";
         }).join("") + "</div>";
     })();
 
@@ -257,19 +256,11 @@
           "<p><b>Le socle.</b> " + (ty.causal || 0) + " études causales · " + (ty.rapport || 0) + " rapports publics · " + (ty.descriptif || 0) + " études descriptives · " + (ty["a-classer"] || 0) + " sources à classer · exemple étranger pour " + ail + " mesure" + (ail > 1 ? "s" : "") + " sur " + ms.length + '</p><p><a href="#' + id + '" data-go="' + id + '">Ouvrir le thème</a></p></div>';
       }).join("") + "</details>";
     };
-    (function () { // sous chaque priorité du groupe
-      var box = el("priorites"), PR = (C.priorites || {}).proposition || []; if (!box || !PR.length) return;
-      var byNum = ctx.byNum;
-      box.insertAdjacentHTML("beforeend", '<section><h2 class="h2">Les priorités du groupe, au crible</h2>' + PR.map(function (p) {
-        var ids = (p.nums || []).map(function (n) { return byNum[n] && byNum[n].theme; }).filter(Boolean);
-        return '<div class="entree"><b>' + esc(p.rang + ". " + p.titre) + "</b>" + PA.apercu(ids) + "</div>";
-      }).join("") + "</section>");
-    })();
-    // ---------- 1. éléments de langage par chantier (réunion du 15/11), remplis par les notes des membres
+    // ---------- 2. les priorités = les chantiers de la réunion du 15/11 (aperçu au crible, analyse complète, notes des membres)
     (function () {
-      var box = el("edl"); if (!box) return;
+      var box = el("priorites"); if (!box) return;
       var CR = C.chantiers_reunion || { chantiers: [] }, NG = C.notes_groupe || [];
-      box.innerHTML = '<div class="thead"><h1>Éléments de langage</h1><p class="mut">' + esc(CR.source || "") + "</p></div>" + CR.chantiers.map(function (c) {
+      box.innerHTML = '<div class="thead"><h1>Les priorités</h1><p class="mut">' + esc(CR.source || "") + "</p></div>" + CR.chantiers.map(function (c) {
         var ns = NG.filter(function (n) { return n.meta.chantier === c.id; });
         return '<div class="entree"><b>' + esc(c.nom) + "</b>" + (ns.length ? ns.map(function (n) { var m = n.socle && n.socle.message; return '<span>' + (m && m.une_minute ? "« " + esc(m.une_phrase) + " »" : "Soundbite à écrire") + ' · <a href="#notes/' + esc(n.id) + '" data-go="notes" data-sub="' + esc(n.id) + '">' + esc(n.meta.auteur) + "</a></span>"; }).join("") : '<span class="mut">Vide pour l\'instant.</span>') + PA.apercu(c.themes || []) + (c.analyse ? '<details class="in"><summary>Analyse complète : ce que disent les candidats, ce que dit la recherche</summary><div class="lire">' + rich(c.analyse, 1) + "</div></details>" : "") + "</div>";
       }).join("");
@@ -298,10 +289,116 @@
         '<line x1="' + X0 + '" x2="' + X0 + '" y1="0" y2="' + (rows.length * 28 + 8) + '" class="ax"></line>' +
         rows.map(function (r, i) { var y = 4 + i * 28, w = Math.abs(r.m) / 2 * (BW / 2); return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + 15) + '" text-anchor="end">' + esc(r.c.nom) + '</text><rect x="' + (r.m >= 0 ? X0 : X0 - w) + '" y="' + (y + 3) + '" width="' + Math.max(w, 1) + '" height="16" rx="4" fill="' + (r.m >= 0 ? "#2a78d6" : "#c4342d") + '"><title>' + esc(r.c.nom + " : " + sg(r.m)) + '</title></rect><text class="nv" x="' + (LW + BW + 56) + '" y="' + (y + 15) + '" text-anchor="end">' + sg(r.m) + "</text>"; }).join("") + "</svg>";
       var cartes = '<div class="elg">' + (EL.personas || []).map(function (p) { var u = VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans · " + esc(String(p.lieu || "").split(",")[0]) + "</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : "") + "</div>"; }).join("") + "</div>";
-      box.innerHTML = '<div class="thead"><h1>Électeurs simulés</h1><p class="mut">Simulation, pas un sondage. Moyenne pondérée par le poids de chaque profil dans la population.</p></div>' +
-        '<section><h2 class="h2">Le programme face aux électeurs</h2>' + bars + "</section>" +
-        '<section><h2 class="h2">Chantier par électeur</h2>' + leg + cases + "</section>" +
-        '<section><h2 class="h2">Les électeurs</h2>' + cartes + '<p class="mut"><a href="#banque" data-go="banque">Créer un électeur</a></p></section>';
+      box.innerHTML = '<div class="thead"><h1>Électeurs simulés</h1><p class="lead">Des entretiens avec des électeurs simulés par l\'IA : choisissez un électeur, appelez-le, et testez directement un élément de langage. Il réagit avec sa vie, ses préoccupations et son vote, et vous pouvez en discuter avec lui. Simulation, pas un sondage.</p></div>' +
+        cartes + '<p class="mut"><a href="#banque" data-go="banque">Créer un électeur</a></p>';
+      var pg = el("programmes"); if (pg && CH.length) pg.insertAdjacentHTML("beforeend", '<section><h2 class="h2">Le programme face aux électeurs simulés</h2><p class="mut">Moyenne pondérée par le poids de chaque profil dans la population, de −2 (rejet) à +2 (adhésion). Simulation, pas un sondage.</p>' + bars + '</section><section><h2 class="h2">Chantier par électeur</h2>' + leg + cases + "</section>");
+    })();
+
+    // ---------- pages de thème : contexte et face aux adversaires (data/crible)
+    (function () {
+      var CB = C.crible || {}, P = C.philippe;
+      var CAN = [["philippe", "Édouard Philippe"], ["lisnard", "David Lisnard"], ["retailleau", "Bruno Retailleau"], ["lepen", "Marine Le Pen"], ["melenchon", "Jean-Luc Mélenchon"], ["glucksmann", "Raphaël Glucksmann"], ["attal", "Gabriel Attal"]];
+      var POS = [["proche", "proche", "#2a78d6"], ["partiel", "désaccord partiel", "#86b6ef"], ["oppose", "opposée", "#c4342d"], ["absent", "pas de position", "#e4e3df"]];
+      var lien = function (s) { return esc(s).replace(/N°\s?(\d+)/g, function (m, n) { return ctx.byNum[+n] ? '<a href="#" data-n="' + n + '">N°' + n + "</a>" : m; }); };
+      var src = function (ss) { return (ss || []).map(function (s) { return s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.ref) + "</a>" : esc(s.ref); }).join(" ; "); };
+      TH.forEach(function (th) {
+        var X = CB[th.id], pane = $("#p-" + th.id + ' [data-p="synthese"]'), adv = $("#p-" + th.id + ' [data-p="adversaires"]');
+        if (!X || !pane) return;
+        var ms = P.mesures.filter(function (m) { return m.theme === th.id; });
+        var sol = ms.map(function (m) { var x = PA.mieux(m, P.analyses, C); return x ? '<li><a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre.replace(/\.$/, "")) + ' <span class="mieux2">' + esc(x.k) + " : " + inline(x.t) + "</span></li>" : ""; }).join("");
+        // somme des positions par candidat, sur tous les sous-thèmes
+        var ST = X.soustemes || [], cnt = {};
+        CAN.slice(1).forEach(function (c) { cnt[c[0]] = { proche: 0, partiel: 0, oppose: 0, absent: 0 }; ST.forEach(function (s) { var v = (s.candidats || {})[c[0]], p = v && v.position && cnt[c[0]][v.position] != null ? v.position : "absent"; cnt[c[0]][p]++; }); });
+        var LW = 190, BW = 520, RH = 30, n = ST.length || 1;
+        var chart = '<svg class="pbars" viewBox="0 0 ' + (LW + BW + 20) + " " + (CAN.length * RH + 40) + '" role="img" aria-label="Position de chaque candidat par rapport au livret, somme des sous-thèmes">' +
+          POS.map(function (p, i) { return '<rect x="' + (LW + i * 130) + '" y="4" width="12" height="12" rx="3" fill="' + p[2] + '"></rect><text class="nv" x="' + (LW + i * 130 + 18) + '" y="14">' + p[1] + "</text>"; }).join("") +
+          CAN.slice(1).map(function (c, r) { var y = 30 + r * RH, x = LW; return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + 16) + '" text-anchor="end">' + esc(c[1]) + "</text>" + POS.map(function (p) { var k = cnt[c[0]][p[0]], w = BW * k / n; var s = k ? '<rect x="' + x + '" y="' + (y + 3) + '" width="' + Math.max(w - 2, 1) + '" height="18" rx="4" fill="' + p[2] + '"><title>' + esc(c[1] + " : " + k + " sous-thème(s) " + p[1]) + "</title></rect>" : ""; x += w; return s; }).join(""); }).join("") + "</svg>";
+        var S = X.sensibilite || {}, st = (S.forte || 0) + (S.moyenne || 0) + (S.faible || 0) || 1;
+        var sens = '<svg class="pbars" viewBox="0 0 ' + (LW + BW + 20) + ' 40" role="img" aria-label="Sensibilité politique de nos mesures">' + '<text class="rl" x="' + (LW - 10) + '" y="22" text-anchor="end">Nos mesures</text>' +
+          [["forte", "#c4342d"], ["moyenne", "#f0a59b"], ["faible", "#e4e3df"]].reduce(function (a, p) { var k = S[p[0]] || 0, w = BW * k / st; a.h += k ? '<rect x="' + a.x + '" y="8" width="' + Math.max(w - 2, 1) + '" height="20" rx="4" fill="' + p[1] + '"><title>Sensibilité ' + p[0] + " : " + k + " mesure(s)</title></rect>" + (w > 70 ? '<text class="nv" x="' + (a.x + 6) + '" y="22">' + p[0] + " " + k + "</text>" : "") : ""; a.x += w; return a; }, { h: "", x: LW }).h + "</svg>";
+        pane.innerHTML = '<p class="lead2">' + lien(X.contexte || "") + "</p>" +
+          (sol ? '<h2 class="h2">Ce qu\'il vaudrait mieux faire</h2><ul class="lst">' + sol + "</ul>" : "") +
+          '<h2 class="h2">Où se placent les candidats</h2><p class="mut">Somme des ' + ST.length + " sous-thèmes : la position de chaque candidat par rapport au livret.</p>" + chart +
+          '<h2 class="h2">Sensibilité politique de nos mesures</h2>' + sens +
+          ((X.recommandations || []).length ? '<h2 class="h2">Ce que recommandent la littérature, les rapports et les comparaisons internationales</h2><ul class="lst">' + X.recommandations.map(function (r) { return "<li>" + lien(r.texte) + (r.sources && r.sources.length ? ' <span class="mut">(' + src(r.sources) + ")</span>" : "") + "</li>"; }).join("") + "</ul>" : "");
+        if (adv) adv.innerHTML = ST.map(function (s) {
+          return '<details class="mes"><summary><div class="mt">' + esc(s.titre) + '</div><p class="verd">' + (s.nums || []).map(function (n) { return "N°" + n; }).join(", ") + '</p></summary><div class="mb"><div class="hwrap"><table class="heat txt"><thead><tr><th>Candidat</th><th>Sa proposition</th><th>Évaluation</th><th>Comparée au livret d\'Édouard Philippe</th></tr></thead><tbody>' +
+            CAN.map(function (c) { var v = (s.candidats || {})[c[0]] || {}; return "<tr><td><b>" + esc(c[1]) + "</b>" + (v.position && c[0] !== "philippe" ? '<br><span class="mut">' + esc((POS.filter(function (p) { return p[0] === v.position; })[0] || [0, v.position])[1]) + "</span>" : "") + "</td><td>" + (v.proposition ? lien(v.proposition) + (v.source ? '<br><span class="mut">' + esc(v.source) + "</span>" : "") : '<span class="mut">Pas de position publique relevée</span>') + "</td><td>" + esc(v.evaluation || "") + "</td><td>" + lien(v.comparaison_philippe || "") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+            ((s.releve_externe || []).length ? '<p class="mut">Relevé indépendant (2027 et moi) :</p><ul class="lst">' + s.releve_externe.map(function (r) { return "<li><b>" + esc(r.candidat) + "</b> : " + esc(r.texte) + (r.source ? ' <span class="mut">' + esc(r.source) + "</span>" : "") + "</li>"; }).join("") + "</ul>" : "") + "</div></details>";
+        }).join("");
+      });
+    })();
+
+    // ---------- grille de chaleur générique (SVG, attributs seulement : la CSP bloque les styles en ligne)
+    PA.heat = function (rows, cols, val, tip, aria) {
+      var col = function (v) { return v == null ? "#fcfcfb" : v <= -1.5 ? "#c4342d" : v <= -0.5 ? "#f0a59b" : v < 0.5 ? "#e4e3df" : v < 1.5 ? "#86b6ef" : "#2a78d6"; };
+      var LW = 330, CW = 34, RH = 26, TOP = 175, cut = function (s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+      return '<div class="hwrap"><svg class="pmap" viewBox="0 0 ' + (LW + cols.length * (CW + 2) + 110) + " " + (TOP + rows.length * (RH + 2)) + '" role="img" aria-label="' + esc(aria || "") + '">' +
+        cols.map(function (c, k) { return '<text class="ph" transform="translate(' + (LW + k * (CW + 2) + CW / 2) + "," + (TOP - 8) + ') rotate(-55)"><title>' + esc(c[1]) + "</title>" + esc(cut(c[1], 24)) + "</text>"; }).join("") +
+        rows.map(function (r, i) { var y = TOP + i * (RH + 2); return '<text class="rl" x="' + (LW - 10) + '" y="' + (y + RH * 0.68) + '" text-anchor="end"><title>' + esc(r[1]) + "</title>" + esc(cut(r[1], 44)) + "</text>" + cols.map(function (c, k) { var v = val(r, c); return '<rect x="' + (LW + k * (CW + 2)) + '" y="' + y + '" width="' + CW + '" height="' + RH + '" rx="4" fill="' + col(v) + '"><title>' + esc(tip(r, c, v)) + "</title></rect>"; }).join(""); }).join("") + "</svg></div>";
+    };
+    PA.heatLeg = function (labels) { var cs = ["#c4342d", "#f0a59b", "#e4e3df", "#86b6ef", "#2a78d6"]; return '<svg class="pleg" viewBox="0 0 600 22" role="img" aria-label="Légende">' + labels.map(function (l, i) { return '<rect x="' + (i * 120) + '" y="5" width="12" height="12" rx="3" fill="' + cs[i] + '"></rect><text x="' + (i * 120 + 18) + '" y="15">' + esc(l) + "</text>"; }).join("") + "</svg>"; };
+
+    // ---------- équipe : le groupe, puis les outils
+    (function () {
+      var box = el("membres"), M = (C.equipe && C.equipe.membres) || (C.membres || []).map(function (m) { return { nom: m.nom, specialites: [m.role], photo: m.photo, linkedin: m.linkedin }; }); if (!box || !M.length) return;
+      var ini = function (n) { return n.split(/[\s-]+/).filter(Boolean).map(function (w) { return w[0]; }).join("").slice(0, 2).toUpperCase(); };
+      box.insertAdjacentHTML("afterbegin", '<div class="thead"><h1>Le groupe</h1><p class="lead">Préparer l\'avenir : ' + M.length + " membres bénévoles, chacun sur sa spécialité.</p></div>" +
+        '<div class="trombi">' + M.map(function (m) { return '<div class="tm">' + (/^(https:\/\/|data:image\/)/.test(m.photo || "") ? '<img src="' + esc(m.photo) + '" alt="' + esc(m.nom) + '">' : '<span class="av" aria-hidden="true">' + esc(ini(m.nom)) + "</span>") + "<b>" + esc(m.nom) + '</b><span class="tags">' + (m.specialites || []).map(function (s) { return '<span class="badge">' + esc(s) + "</span>"; }).join(" ") + "</span>" + (m.bio ? '<span class="mut">' + esc(m.bio) + "</span>" : "") + (m.linkedin ? '<a href="' + esc(m.linkedin) + '" target="_blank" rel="noopener">LinkedIn</a>' : "") + "</div>"; }).join("") + "</div>" +
+        '<section><h2 class="h2">Travailler avec Claude Code et les skills du groupe</h2><ol class="lst"><li>Installer Claude Code : <code>curl -fsSL https://claude.ai/install.sh | bash</code></li><li>Installer les skills et agents de recherche (revue de littérature, vérification des citations, analyse de politique publique, lecture de PDF…) : téléchargez <a href="https://ajoly35.github.io/assets/research-kit-installer.zsh" target="_blank" rel="noopener">l\'installateur</a>, puis demandez à Claude Code de le lire et de vous dire ce qu\'il ajoute avant de le lancer. Mode d\'emploi : <a href="https://ajoly35.github.io/setup.html" target="_blank" rel="noopener">Research with Claude</a>.</li><li>Pour travailler sur le site et les notes du groupe : clonez le dépôt preparer-lavenir (Équipe › Contribuer) ; ses méthodes propres sont dans <code>.claude/skills/</code>.</li></ol></section>');
+    })();
+
+    // ---------- bonnes idées des autres programmes, par thème
+    (function () {
+      var box = el("droite"), B = C.bonnes_idees; if (!box || !B || !B.themes) return;
+      var src = function (ss) { return (ss || []).map(function (s) { return s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.ref) + "</a>" : esc(s.ref); }).join(" ; "); };
+      box.innerHTML = '<div class="thead"><h1>Bonnes idées des autres programmes</h1><p class="mut">Par thème. Ce que proposent les autres candidats et qui manque au livret ou y serait plus fort, avec les preuves.</p></div>' +
+        B.themes.filter(function (th) { return th.idees && th.idees.length; }).map(function (th) {
+          return '<h2 class="h2">' + esc(th.nom) + '</h2><div class="bigrid">' + th.idees.map(function (x) {
+            return '<details class="mes"><summary><div class="mt">' + esc(x.titre) + '</div><p class="verd">' + esc((x.candidat || []).join(", ")) + "</p></summary><div class=\"mb\">" +
+              "<p><b>L'idée.</b> " + esc(x.idee || "") + "</p>" + (x.version_groupe ? "<p><b>En mieux.</b> " + esc(x.version_groupe) + "</p>" : "") +
+              (x.pourquoi ? "<p><b>Pourquoi.</b> " + esc(x.pourquoi) + "</p>" : "") + (x.sources && x.sources.length ? '<p class="mut">' + src(x.sources) + "</p>" : "") +
+              (x.edl ? '<p class="mieux"><b>Élément de langage suggéré :</b> « ' + esc(x.edl) + " »</p>" : "") +
+              ((x.mesures_philippe || []).length ? '<p class="mut">Livret : ' + x.mesures_philippe.map(function (n) { return '<a href="#" data-n="' + n + '">N°' + n + "</a>"; }).join(", ") + "</p>" : "") + "</div></details>";
+          }).join("") + "</div>";
+        }).join("");
+    })();
+
+    // ---------- éducation, en une page
+    (function () {
+      var E = C.education_page, EP = C.education_personas; if (!E) return;
+      var ln = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(t) + "</a>" : ""; };
+      var rendre = function () {
+        var box = el("edu-prop"); if (!box) return;
+        var Pp = E.propositions || {}, B = Pp.boussole || {}, h = '<div class="thead"><h1>Éducation</h1></div>';
+        h += '<section><h2 class="h2">1. Nos propositions : ' + esc(Pp.titre || "IA et jeunes") + "</h2>" + (Pp.resume ? '<p class="lead2">' + esc(Pp.resume) + "</p>" : "") +
+          ((Pp.items || []).length ? '<ul class="lst">' + Pp.items.map(function (i) { return "<li><b>" + esc(i.titre) + "</b> " + esc(i.texte || "") + "</li>"; }).join("") + "</ul>" : "") +
+          '<p class="filters">' + [ln(Pp.note_lien, "La note"), ln(Pp.doc_lien, "Modifier dans Google Docs")].filter(Boolean).map(function (a) { return a.replace("<a ", '<a class="chip" '); }).join(" ") + "</p>" +
+          (B.lien ? '<div class="box"><p><b>La Boussole des formations.</b> ' + esc(B.texte || "") + '</p><p><a class="chip" href="' + esc(B.lien) + '" target="_blank" rel="noopener">Ouvrir la Boussole</a></p></div>' : "") + "</section>";
+        h += '<section><h2 class="h2">2. Le programme éducation d\'Édouard Philippe</h2><div class="thg">' + (E.programme || []).map(function (th) {
+          return '<details class="thc"><summary><b>' + esc(th.theme) + '</b><span class="kick">' + (th.mesures || []).length + " mesures</span></summary>" + (th.mesures || []).map(function (m) {
+            return '<details class="in"><summary>N°' + esc(m.num) + " " + esc(m.titre || "") + (m.verdict ? ' <span class="mut">· ' + esc(m.verdict) + "</span>" : "") + "</summary>" +
+              ((m.evaluations || []).length ? '<ul class="lst">' + m.evaluations.map(function (e) { return "<li>" + (e.lien ? ln(e.lien, e.source) : esc(e.source)) + ' <span class="mut">(' + esc(e.niveau || "") + ")</span> : " + esc(e.ce_que_ca_montre || "") + "</li>"; }).join("") + "</ul>" : "") +
+              ((m.travail_adrien || []).length ? '<p class="mut">Notre travail : ' + m.travail_adrien.map(function (w) { return ln(w.lien, w.titre) || esc(w.titre); }).join(" · ") + "</p>" : "") + "</details>";
+          }).join("") + "</details>";
+        }).join("") + "</div></section>";
+        if (EP && EP.personas) {
+          var VX = C.voix || {};
+          h += '<section><h2 class="h2">3. Le programme face aux acteurs de l\'école</h2><p class="mut">Électeurs simulés, pas un sondage : chacun juge les mesures qui le concernent, de −2 (rejet) à +2 (adhésion).</p>' +
+            PA.heatLeg(["rejet", "plutôt contre", "neutre", "plutôt pour", "adhésion"]) +
+            PA.heat((EP.themes || []).map(function (t) { return [t.id, t.nom]; }), EP.personas.map(function (p) { return [p.id, p.libelle]; }), function (r, c) { var v = ((EP.matrice || {})[r[0]] || {})[c[0]]; return v == null ? null : v; }, function (r, c, v) { return c[1] + " · " + r[1] + " : " + (v == null ? "pas concerné" : String(v).replace(".", ",")); }, "Réaction de chaque acteur de l'école à chaque partie du programme") +
+            '<div class="elg">' + EP.personas.map(function (p) { var u = VX[p.id]; return '<div class="el"><b>' + esc(p.libelle) + "</b>" + (p.age ? '<p class="kick">' + esc(p.age) + " ans</p>" : "") + (/^https:\/\/elevenlabs\.io\//.test(u || "") ? '<button class="appel" data-appel="' + esc(u) + '">Appeler</button>' : '<p class="mut"><a href="#banque" data-go="banque">Créer l\'agent vocal</a></p>') + "</div>"; }).join("") + "</div></section>";
+        }
+        var A = E.adversaires;
+        if (A && A.candidats && A.axes) {
+          h += '<section><h2 class="h2">4. Ce qui distingue le programme des autres candidats</h2><p class="mut">Proximité de chaque candidat avec le livret, axe par axe, de −2 (opposé) à +2 (proche).</p>' + PA.heatLeg(["opposé", "plutôt opposé", "partiel", "plutôt proche", "proche"]) +
+            PA.heat(A.axes.map(function (a) { return [a, a]; }), A.candidats.map(function (c) { return [c.id, c.nom]; }), function (r, c) { var x = ((A.candidats.filter(function (k) { return k.id === c[0]; })[0] || {}).positions || {})[r[0]]; return x && x.proche_de_philippe != null ? x.proche_de_philippe : null; }, function (r, c, v) { var x = ((A.candidats.filter(function (k) { return k.id === c[0]; })[0] || {}).positions || {})[r[0]]; return c[1] + " · " + r[1] + " : " + (x ? x.position + (x.source ? " (" + x.source + ")" : "") : "pas de position relevée"); }, "Proximité des candidats avec le programme éducation") + "</section>";
+        }
+        var G = {}; (E.etudes || []).forEach(function (x) { (G[x.groupe] = G[x.groupe] || []).push(x); });
+        h += '<section><h2 class="h2">5. Études pour le groupe de travail</h2><div class="thg">' + Object.keys(G).map(function (g) { return '<div class="thc"><b>' + esc({ handicap: "Handicap", "sante-mentale": "Santé mentale", ia: "IA" }[g] || g) + "</b>" + G[g].map(function (x) { return "<span>" + (ln(x.lien, x.titre) || esc(x.titre)) + ' <span class="mut">· ' + esc(x.origine || "") + "</span></span>"; }).join("") + "</div>"; }).join("") + "</div></section>";
+        box.innerHTML = h;
+      };
+      PA.routes["edu-prop"] = rendre; rendre();
     })();
     // ---------- équipe : contexte de travail, une note à la fois
     PA.ctxBoutons = function (n) {
@@ -498,7 +595,7 @@
       var ch = aChanger(t), so = t.mes.filter(solide), re = t.mes.filter(function (m) { return !solide(m) && !PA.mieux(m, ANL, C); }).sort(fragile);
       var np = PROPS.filter(function (x) { return x.theme === t.id; }).length;
       var cd = function (m) { return ctx.card(m).replace(' id="m' + m.num + '"', ""); };
-      box.innerHTML = '<p class="suite0">' + plural(ch.length, "correction") + " sur " + t.mes.length + " mesures, les plus fragiles d'abord" + (np ? ' · <a href="#propositions/' + t.id + '" data-go="propositions" data-sub="' + t.id + '">' + plural(np, "proposition") + " du groupe en plus</a>" : "") + "</p>" +
+      box.innerHTML = '<p class="suite0"><a href="#priorites" data-go="priorites">Nouvelles propositions</a></p>' +
         ch.map(cd).join("") +
         (so.length ? '<h2 class="h2">À garder : bien fondées (' + so.length + ")</h2>" + so.map(cd).join("") : "") +
         (re.length ? '<details class="in reste"><summary>' + plural(re.length, "mesure") + " dont la correction reste à écrire</summary>" + re.map(cd).join("") + "</details>" : "");
@@ -519,7 +616,7 @@
     if (PA.edu && C.education) {
       var fait = {};
       var edu = function (s, opt) { var b = el("edu-" + s); try { if (s === "international") PA.edu.renderInternational(ctx, b); else if (s === "boussole") PA.edu.renderBoussole(ctx, b); else if (s === "tester") { if (PA.edu.renderTester) PA.edu.renderTester(ctx, b); } else if (s === "prop") PA.edu.renderPropositions(ctx, b, null); else PA.edu.renderTheme(ctx, s, b, opt || {}); } catch (e) { console.error("[education]", s, e); b.innerHTML = '<p class="mut">Contenu indisponible.</p>'; } fait[s] = 1; };
-      ["ecole", "handicap", "orientation", "voiepro", "international", "boussole", "tester", "prop"].forEach(function (s) { PA.routes["edu-" + s] = function (x) { if (!fait[s]) edu(s); }; });
+      ["ecole", "handicap", "orientation", "voiepro", "international", "boussole", "tester", "prop"].forEach(function (s) { if (s === "prop" && C.education_page && PA.routes["edu-prop"]) return; PA.routes["edu-" + s] = function (x) { if (!fait[s]) edu(s); }; });
       PA.edu.onNavigate = function (s, sec, carte) { fait[s] = 1; go("edu-" + s); edu(s, { section: sec, carte: carte }); };
     }
 

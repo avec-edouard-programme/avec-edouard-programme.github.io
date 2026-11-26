@@ -160,3 +160,12 @@ textarea,input:not([type=checkbox]):not(.search):not(#pw),select{font:inherit;fo
 .pleg{max-width:560px}.pleg text{font-size:12px;fill:var(--ink-2)}
 .nm{font-family:var(--mono);font-size:.85rem;color:var(--ink-2);text-align:right}
 .apc{margin-top:8px}.apc .apt{padding:6px 0 10px;border-top:1px solid var(--line)}.apc .apt h4{margin:8px 0 4px}
+.trombi{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin:16px 0 28px}
+.tm{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.tm img,.tm .av{width:64px;height:64px;border-radius:50%;object-fit:cover}
+.tm .av{display:flex;align-items:center;justify-content:center;background:var(--line);color:var(--ink);font-family:var(--display);font-size:1.3rem}
+.bigrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.mieux2{display:block;color:var(--ink-2)}
+details.thc summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.tm .tags{display:flex;flex-wrap:wrap;gap:4px}.tm .mut{font-size:.85rem}
+.tm .badge{white-space:normal;text-align:left;max-width:100%}

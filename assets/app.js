@@ -185,10 +185,10 @@
       $$(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.id === "t-" + id); });
       $$("#app > .panel").forEach(function (p) { p.hidden = p.id !== "p-" + id; });
       cur = id;
-      if (thById[id]) showSub(id, sub || "changer");
+      if (thById[id]) showSub(id, sub || "synthese");
       var rt = (PAX.routes || {})[id]; if (rt) rt(sub);
       if (PAX.onGo) PAX.onGo(id, sub);
-      var nh = "#" + id + ((rt && sub) || (thById[id] && sub && sub !== "changer") ? "/" + sub : ""); if (location.hash !== nh) history.pushState(null, "", nh);
+      var nh = "#" + id + ((rt && sub) || (thById[id] && sub && sub !== "synthese") ? "/" + sub : ""); if (location.hash !== nh) history.pushState(null, "", nh);
       if (num != null) { var el = $("#m" + num); if (el) { el.open = true; el.scrollIntoView({ block: "start" }); return; } }
       window.scrollTo(0, 0);
     }
@@ -739,19 +739,18 @@
       };
       var mlab = function (c, m) { return c.id === "philippe" && m.num ? '<a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre) : esc(m.titre); };
       var ch = '<div class="thead"><h1>Chiffrage et arbitrages</h1><p class="mut">Coût estimé de chaque mesure, en milliards d\'euros par an en fin de quinquennat, et son effet sur le solde public : <b>+</b> coûte, <b>−</b> rapporte. Estimations de nos agents de recherche, sourcées mesure par mesure ; effets sur la croissance exclus. Chiffrage du ' + esc(CF.date) + ".</p></div>" +
-        '<div class="filters" id="cf-c">' + CF.candidats.map(function (c) { return '<button class="chip" data-c="' + c.id + '">' + esc(c.nom) + "</button>"; }).join("") + "</div>" +
-        '<div class="filters" id="cf-m"><span class="mut">Économies annoncées sans mesures précises :</span><button class="chip" data-m="prudent">comptées à 20 % (prudent)</button><button class="chip" data-m="candidat">au mot du candidat</button></div>' +
+        '<div class="filters" id="cf-c">' + CF.candidats.map(function (c) { return '<button class="chip" data-c="' + c.id + '">' + esc(c.nom) + "</button>"; }).join("") + '<button class="chip" data-c="__cmp">Comparaison des programmes</button></div>' +
+        
         '<div id="cf-out"></div><div id="cf-cmp"></div>';
         ''; var cmpHtml = function () { return '<h2 class="h2">Comparaison des programmes, bloc par bloc</h2><p class="mut">Solde central par bloc (coûts moins économies et recettes), en Md€ par an.</p><div class="scroll"><table class="cmp"><thead><tr><th>Bloc</th>' + CF.candidats.map(function (c) { return "<th>" + esc(c.nom) + "</th>"; }).join("") + "</tr></thead><tbody>" +
         CF.themes.map(function (t) { return "<tr><td><b>" + esc(thName(t)) + "</b></td>" + CF.candidats.map(function (c) { var x = byTheme(c)[t]; return "<td>" + (x.n ? fmt(x.cout + x.eco) : '<span class="mut">—</span>') + "</td>"; }).join("") + "</tr>"; }).join("") +
         '<tr class="tot"><td><b>Total</b></td>' + CF.candidats.map(function (c) { var s = c.mesures.reduce(function (a, m) { return a + cOf(m); }, 0); return "<td><b>" + fmt(s) + "</b></td>"; }).join("") + "</tr>" +
-        '<tr><td>Annoncé par le candidat</td>' + CF.candidats.map(function (c) { var t = c.total_annonce; return '<td class="mut">' + (t ? esc(t.md_eur_an != null ? fmt(+t.md_eur_an) : "") + " " + esc(t.texte || "") : "—") + "</td>"; }).join("") + "</tr>" +
-        '<tr><td>Simulation externe</td>' + CF.candidats.map(function (c) { return '<td class="mut">' + (c.externe.length ? c.externe.map(function (e) { return esc(e.note || ""); }).join(" ") : "—") + "</td>"; }).join("") + "</tr>" +
         "</tbody></table></div>"; };
       $("#p-chiffrage").innerHTML = ch;
       var crender = function () {
-        var c = candById[cst.cand];
         $$("#cf-c .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-c") === cst.cand); });
+        if (cst.cand === "__cmp") { $("#cf-out").innerHTML = cmpHtml(); $("#cf-cmp").innerHTML = ""; return; }
+        var c = candById[cst.cand];
         var bt = byTheme(c, cst.off), tot = { cout: 0, eco: 0 }, maxv = 1;
         CF.themes.forEach(function (t) { tot.cout += bt[t].cout; tot.eco += bt[t].eco; maxv = Math.max(maxv, bt[t].cout, -bt[t].eco); });
         var nNc = c.mesures.filter(function (m) { return val(m) == null; }).length, nOff = Object.keys(cst.off).filter(function (k) { return cst.off[k]; }).length;
@@ -770,7 +769,7 @@
                 (m.note || m.calcul || (m.sources && m.sources.length) ? '<p class="mut">' + esc(m.note || "") + (m.calcul ? " Calcul : " + esc(m.calcul) : "") + (m.sources || []).map(function (s) { return " " + (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.ref) + "</a>" : esc(s.ref)) + (s.page ? ", " + esc(s.page) : ""); }).join(" ;") + "</p>" : "") + "</li>";
             }).join("") + "</ul></details>";
           }).join("");
-        $("#cf-out").innerHTML = h; $("#cf-cmp").innerHTML = cmpHtml();
+        $("#cf-out").innerHTML = h; $("#cf-cmp").innerHTML = "";
         $$("#cf-m .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-m") === cst.mode); });
         $$("#cf-out [data-w]").forEach(function (el) { el.style.width = Math.max(0, Math.min(100, +el.getAttribute("data-w"))) + "%"; });
         $$("#cf-out input[data-id]").forEach(function (b) { b.addEventListener("change", function () { cst.off[b.getAttribute("data-id")] = !b.checked; var op = $$("#cf-out details[open]").map(function (d) { return d.querySelector("summary b").textContent; }); crender(); $$("#cf-out details").forEach(function (d) { if (op.indexOf(d.querySelector("summary b").textContent) >= 0) d.open = true; }); }); });
@@ -825,12 +824,12 @@
     }
     } catch (e) { console.error("[site] bloc fiches", e); var _p = document.getElementById("p-fiches"); if (_p) _p.innerHTML = '<p class="mut">Cette section n\'a pas pu s\'afficher.</p>'; }
     // ---------- pages thème
-    var SUBS = [["changer", "Ce qu'il faut changer"], ["mesures", "Toutes les mesures"], ["adversaires", "Face aux adversaires"], ["synthese", "Contexte"]];
+    var SUBS = [["synthese", "Contexte"], ["mesures", "Toutes les mesures"], ["adversaires", "Face aux adversaires"], ["changer", ""]];
     var tst = {};
     TH.forEach(function (t) {
       tst[t.id] = { v: null, s: null, onlyA: t.an.length > 0 };
       $("#p-" + t.id).innerHTML = '<div class="thead"><h1>' + esc(t.nom) + '</h1><p class="mut">' + (t.an.length ? t.an.length + " sur " + t.mes.length + " mesures analysées" : t.mes.length + " mesures, pas encore analysées par le groupe") + "</p></div>" +
-        '<nav class="subtabs">' + SUBS.map(function (s) { return '<button data-sub="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</nav>" +
+        '<nav class="subtabs">' + SUBS.map(function (s) { return s[1] ? '<button data-sub="' + s[0] + '">' + s[1] + "</button>" : ""; }).join("") + "</nav>" +
         SUBS.map(function (s) { return '<div class="sub" data-p="' + s[0] + '"></div>'; }).join("");
       $$("#p-" + t.id + " .subtabs button").forEach(function (b) { b.addEventListener("click", function () { go(t.id, b.getAttribute("data-sub")); }); });
       [renderSyn, renderMes, renderAdv].forEach(function (f) { try { f(t); } catch (e) { console.error("[site] thème " + t.id + " " + f.name, e && e.stack || e); } });
