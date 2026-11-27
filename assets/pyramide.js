@@ -371,9 +371,8 @@
       var rendre = function () {
         var box = el("edu-prop"); if (!box) return;
         var Pp = E.propositions || {}, B = Pp.boussole || {}, h = '<div class="thead"><h1>Éducation</h1></div>';
-        h += '<section><h2 class="h2">1. Nos propositions : ' + esc(Pp.titre || "IA et jeunes") + "</h2>" + (Pp.resume ? '<p class="lead2">' + esc(Pp.resume) + "</p>" : "") +
-          ((Pp.items || []).length ? '<ul class="lst">' + Pp.items.map(function (i) { return "<li><b>" + esc(i.titre) + "</b> " + esc(i.texte || "") + "</li>"; }).join("") + "</ul>" : "") +
-          '<p class="filters">' + [ln(Pp.note_lien, "La note"), ln(Pp.doc_lien, "Modifier dans Google Docs")].filter(Boolean).map(function (a) { return a.replace("<a ", '<a class="chip" '); }).join(" ") + "</p>" +
+        h += '<section><h2 class="h2">1. Nos propositions : ' + esc(Pp.titre || "IA et jeunes") + "</h2>" + // note retirée le 27/11/2026 (Adrien : pas encore finie) ; résumé, mesures et liens réaffichables en remettant ce bloc
+          '<p class="mut">Note en cours de rédaction.</p>' +
           (B.lien ? '<div class="box"><p><b>La Boussole des formations.</b> ' + esc(B.texte || "") + '</p><p><a class="chip" href="' + esc(B.lien) + '" target="_blank" rel="noopener">Ouvrir la Boussole</a></p></div>' : "") + "</section>";
         h += '<section><h2 class="h2">2. Le programme éducation d\'Édouard Philippe</h2><div class="thg">' + (E.programme || []).map(function (th) {
           return '<details class="thc"><summary><b>' + esc(th.theme) + '</b><span class="kick">' + (th.mesures || []).length + " mesures</span></summary>" + (th.mesures || []).map(function (m) {
