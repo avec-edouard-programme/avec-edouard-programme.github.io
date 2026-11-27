@@ -440,7 +440,7 @@
 
     // ---------- Convergences à droite : bonnes idées, terrain commun, désaccords (Lisnard, Retailleau)
     try {
-      var CV = C.convergences, CN = { lisnard: "David Lisnard", retailleau: "Bruno Retailleau", groupe: "Préparer l'avenir" };
+      var CV = C.convergences, CN = { lisnard: "David Lisnard", retailleau: "Bruno Retailleau", groupe: "Notre analyse" };
       if (CV) {
         var idees = (CV.idees_a_prendre || []).map(function (x) { return { src: x.candidat, titre: x.titre, detail: x.detail, eval: x.evaluation, preuves: x.preuves, nums: x.mesures_livret_liees || [], id: "droite-" + x.id, url: x.url, source: x.source }; });
         var EVT = ((C.recherche_travail || {}).eval || {}).evaluations || [];

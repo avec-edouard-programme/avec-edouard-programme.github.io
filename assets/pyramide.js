@@ -5,9 +5,9 @@
   "use strict";
   var PA = (window.PA = window.PA || { mods: [] });
   PA.mods = PA.mods || [];
-  PA.pages = [["personas", "Électeurs simulés"], ["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
+  PA.pages = [["personas", "Électeurs simulés"], ["verifier", "Vérifier une note"], ["contexte", "Contexte de travail"], ["messages", "Messages à débattre"], ["programmes", "Tous les programmes"], ["recit", "Le récit"], ["discours", "Discours"], ["banque", "Électeurs à appeler"], ["propositions", "Par thème"], ["notes", "Notes en discussion"], ["edu-prop", "Éducation"], ["analyse", "Ce qu'il faut changer"], ["edu-ecole", "École et enseignants"], ["edu-handicap", "Handicap et santé mentale"], ["edu-orientation", "Orientation et emploi"], ["edu-voiepro", "Voie pro"], ["edu-international", "Ailleurs"], ["edu-boussole", "Boussole"], ["edu-tester", "Tester une proposition d'école"], ["reseaux", "Réseaux"], ["sources", "Sources"], ["contribuer", "Contribuer"]];
   PA.routes = {};
-  PA.sansBoite = ["edl", "personas", "contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
+  PA.sansBoite = ["edl", "personas", "verifier", "contexte", "messages", "programmes", "accueil", "recit", "discours", "banque", "propositions", "notes", "edu-prop", "analyse", "edu-ecole", "edu-handicap", "edu-orientation", "edu-voiepro", "edu-international", "edu-boussole", "edu-tester", "reseaux", "sources", "contribuer"];
 
   // La correction proposée, mesure par mesure : toujours un texte déjà écrit par le groupe (analyse, élément de langage proposé, leçon étrangère)
   var RP = /(Mieux vaut|Mieux vaudrait|La piste sérieuse|Privilégions|Ciblons|Réservons|Conditionnons|Il faut (?:plutôt|le|reprendre)|Je recommande|Préférer)[^.]*\./;
@@ -65,7 +65,7 @@
       { id: "priorites", n: "2", t: "Priorités et propositions", pages: [["priorites", "Les priorités"], ["droite", "Bonnes idées des autres programmes"], ["edu-prop", "Éducation"]] },
       { id: "programmes", n: "3", t: "Programmes au crible", pages: [["programmes", "Par thème"], ["analyse", "Ce qu'il faut changer"]].concat(AN, [["chiffrage", "Chiffrage"]]) },
       { id: "sources", t: "Sources", util: 1, pages: [["sources", "Sources"], ["contribuer", "Contribuer"], ["methode", "Méthode"]] },
-      { id: "membres", t: "Équipe", util: 1, pages: [["membres", "Membres"], ["notes", "Notes en discussion"], ["contexte", "Contexte de travail"], ["organisation", "Organisation"], ["noteia", "Note IA du groupe"]] }
+      { id: "verifier", t: "Outils", util: 1, pages: [["verifier", "Vérifier une note"], ["membres", "Travailler avec Claude Code"]] }
     ];
     var groupOf = {}; G.forEach(function (g) { g.pages.forEach(function (p) { groupOf[p[0]] = g; }); }); EDU.forEach(function (p) { if (!groupOf[p[0]]) groupOf[p[0]] = G[3]; });
     var nav = document.createElement("nav"); nav.className = "pnav"; nav.setAttribute("aria-label", "Navigation principale");
@@ -217,7 +217,7 @@
       }).join("") + "</svg>";
       PA.svgPyr = svg; PA.etages = ET;
       PA.tableau = el("accueil").innerHTML; // ancien accueil, gardé dans « Analyse »
-      el("accueil").innerHTML = '<div class="hero"><p class="kick">Document de travail · mis à jour le ' + fdate(C.genere_le) + " · J-" + ctx.days(ctx.ELECTION) + '</p><h1 class="nom">Préparer <em>l\'avenir</em></h1><p class="slogan">La volonté d\'agir</p></div>' +
+      el("accueil").innerHTML = '<div class="hero"><p class="kick">Document de travail · mis à jour le ' + fdate(C.genere_le) + " · J-" + ctx.days(ctx.ELECTION) + '</p><h1 class="nom">Programmes <em>2027</em></h1></div>' +
         '<div class="pyrg">' + svg + '<ol class="etl">' + ET.map(function (e, i) { return '<li data-et="' + e.id + '"><a href="#' + e.id + '" data-go="' + e.id + '"><span class="kick">' + (i + 1) + '</span><b>' + esc(e.t) + "</b><span>" + esc(e.s) + '</span><span class="kick">' + esc(e.c) + "</span></a></li>"; }).join("") + "</ol></div>" +
         '<div class="cotes"><a href="#sources" data-go="sources"><span class="kick">Dépôt</span><b>Sources</b><span>Littérature et programmes, par thème.</span></a><a href="#contribuer" data-go="contribuer"><span class="kick">Dépôt</span><b>Contribuer</b><span>Depuis le site, GitHub, Claude Code ou Codex.</span></a></div>';
       $$("[data-et]", el("accueil")).forEach(function (a) { ["mouseenter", "mouseleave"].forEach(function (ev) { a.addEventListener(ev, function () { $$('[data-et="' + a.getAttribute("data-et") + '"]', el("accueil")).forEach(function (b) { b.classList.toggle("on", ev === "mouseenter"); }); }); }); });
@@ -339,13 +339,95 @@
     };
     PA.heatLeg = function (labels) { var cs = ["#c4342d", "#f0a59b", "#e4e3df", "#86b6ef", "#2a78d6"]; return '<svg class="pleg" viewBox="0 0 600 22" role="img" aria-label="Légende">' + labels.map(function (l, i) { return '<rect x="' + (i * 120) + '" y="5" width="12" height="12" rx="3" fill="' + cs[i] + '"></rect><text x="' + (i * 120 + 18) + '" y="15">' + esc(l) + "</text>"; }).join("") + "</svg>"; };
 
+    // ---------- vérifier une note : tout se passe dans le navigateur, rien n'est envoyé (portage de depot/outils/verifier_note.py, 27/11/2026)
+    (function () {
+      var box = el("verifier"); if (!box) return;
+      var CAND = { philippe: "Édouard Philippe", lisnard: "David Lisnard", retailleau: "Bruno Retailleau", lepen: "Marine Le Pen", melenchon: "Jean-Luc Mélenchon", glucksmann: "Raphaël Glucksmann", attal: "Gabriel Attal" };
+      var SECT = [["Soundbite", /soundbite/], ["Le constat : ce que proposent les candidats", /constat/], ["Nos propositions", /propositions?/], ["À vérifier avant usage", /a verifier/], ["Sources", /sources/]];
+      var STOP = {}; ("a au aux avec ce ces cet cette dans de des du elle en et eux il ils je la le les leur leurs lui ma mais me meme mes moi mon ne nos notre nous on ou par pas plus pour qu que qui sa sans se ses son sont sur ta te tes toi ton tu un une vos votre vous est etre ete fait faire avoir ont comme aussi tout tous toute toutes entre depuis apres avant chaque deux trois dont elles ainsi cela peut doit sera seront").split(" ").forEach(function (w) { STOP[w] = 1; });
+      var norm = function (x) { return String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
+      var toks = function (x) { var o = []; (norm(x).replace(/-/g, " ").match(/[a-z]{2,}/g) || []).forEach(function (w) { if (STOP[w] || (w.length < 3 && w !== "ue" && w !== "ia")) return; o.push(w.length > 5 ? w.replace(/(ements?|ations?|ees?|es|s|e)$/, "") : w); }); return o; };
+      var cnt = function (ts) { var c = {}; ts.forEach(function (w) { c[w] = (c[w] || 0) + 1; }); return c; };
+      var DOCS = null, IDF = null;
+      var corpus = function () {
+        if (DOCS) return;
+        DOCS = [];
+        (C.sources_index || []).forEach(function (d) {
+          var p = String(d.chemin || "").split("/"), cat = d.categorie, cand = cat === "programme" && p.length > 4 ? p[3] : "";
+          DOCS.push({ cat: cat, cand: cand, titre: d.titre, auteurs: d.auteurs || d.auteur || "", annee: d.annee || "", url: d.url || "", theme: d.theme, c: cnt(toks((d.titre || "") + " " + (d.resume || "") + " " + String(d.texte || "").slice(0, 6000))) });
+        });
+        Object.keys(C.crible || {}).forEach(function (th) { ((C.crible[th] || {}).soustemes || []).forEach(function (st) { Object.keys(st.candidats || {}).forEach(function (k) { var v = st.candidats[k] || {}; if (!v.proposition || k === "philippe") return; DOCS.push({ cat: "programme", cand: k, titre: st.titre + " : " + v.proposition, auteurs: v.source || "", theme: th, c: cnt(toks(st.titre + " " + v.proposition)) }); }); }); });
+        var df = {}; DOCS.forEach(function (d) { Object.keys(d.c).forEach(function (w) { df[w] = (df[w] || 0) + 1; }); });
+        IDF = {}; Object.keys(df).forEach(function (w) { IDF[w] = Math.log(DOCS.length / df[w]); });
+        DOCS.forEach(function (d) { var v = {}, n = 0; Object.keys(d.c).forEach(function (w) { v[w] = (1 + Math.log(d.c[w])) * (IDF[w] || 0); n += v[w] * v[w]; }); d.v = v; d.n = Math.sqrt(n) || 1; delete d.c; });
+      };
+      var proches = function (txt) {
+        corpus(); var c = cnt(toks(txt)), q = {}, nq = 0;
+        Object.keys(c).forEach(function (w) { q[w] = (1 + Math.log(c[w])) * (IDF[w] || 0); nq += q[w] * q[w]; }); nq = Math.sqrt(nq) || 1;
+        return DOCS.map(function (d) { var s = 0; for (var w in q) if (d.v[w]) s += q[w] * d.v[w]; return { s: s / (nq * d.n), d: d }; }).sort(function (a, b) { return b.s - a.s; });
+      };
+      var soundbite = function (md) {
+        var m = md.match(/^\s*((?:>.*\n?)+)/);
+        if (m && !/pourquoi-cette-note|pourquoi cette note/.test(norm(m[1]))) { var pu = m[1].split("\n").map(function (l) { return l.replace(/^>\s*[-*]?\s*/, "").trim(); }).filter(function (l) { return l && !/^\**soundbite\**\s*:?$/i.test(l); }); if (pu.length && !/à écrire/i.test(pu.join(" "))) return pu; }
+        var h = md.match(/^#{1,3} .*(?:soundbite|en une minute).*\n+([\s\S]*?)(?=\n#{1,3} |$)/im); return h ? h[1].split("\n").map(function (l) { return l.replace(/^[>\s*-]+/, "").trim(); }).filter(Boolean) : [];
+      };
+      var chiffres = function (md) {
+        var corps = md.split(/\n#{1,3} Sources/)[0], out = [];
+        corps.split(/(?<=[.!?])\s+|\n/).forEach(function (ph) {
+          ph = ph.replace(/^[\s\-*>]+|[\s\-*>]+$/g, ""); if (!/\d/.test(ph) || /^[\d. ]+$/.test(ph) || /^(#|---)/.test(ph)) return;
+          var q = ph.replace(/N°\s*\d+|\b\d{1,2}(?:er)? (?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) (?:19|20)\d{2}|\b(?:19|20)\d{2}\b/g, "");
+          if (!/\d+(?:[,.]\d+)?\s*(?:%|Md€|M€|k€|€|milliards?|millions?|points?|fois)|\b\d[\d  ]{2,}\b/.test(q)) return;
+          out.push({ ph: ph.slice(0, 220), ok: /\((?!\s*«)[^)]*[A-Z][^)]*\)/.test(ph) || /calcul du groupe/.test(ph) || /[⁰¹²³⁴⁵⁶⁷⁸⁹]|\[\^?\d+\]/.test(ph) });
+        });
+        return out;
+      };
+      var verifier = function (md) {
+        var txt = md.replace(/^---\n[\s\S]*?\n---\n/, ""), sb = soundbite(txt), mots = sb.join(" ").split(/\s+/).filter(Boolean).length;
+        var titres = (txt.match(/^#{1,3} .+$/gm) || []).map(function (t) { return norm(t).replace(/-/g, " "); });
+        var sections = SECT.map(function (x) { return { s: x[0], ok: titres.some(function (t) { return x[1].test(t); }) || (x[0] === "Soundbite" && sb.length > 0) }; });
+        var r = proches(txt), lit = r.filter(function (x) { return x.d.cat === "litterature" || x.d.cat === "analyse"; }).slice(0, 8);
+        var prog = {}; r.forEach(function (x) { if (x.d.cat === "programme" && CAND[x.d.cand] && x.s >= 0.08) { var a = prog[x.d.cand] = prog[x.d.cand] || []; if (a.length < 2) a.push(x); } });
+        var props = r.filter(function (x) { return x.d.cat === "proposition" && x.s >= 0.25; }).slice(0, 4);
+        var ch = chiffres(txt), ns = ch.filter(function (c) { return !c.ok; });
+        var ailleurs = /ailleurs|allemagne|royaume-uni|italie|espagne|suede|etats-unis|japon|pays-bas|danemark|canada|finlande|portugal|suisse|autriche|belgique|ocde/.test(norm(txt));
+        var th = {}; r.slice(0, 30).forEach(function (x) { if (x.d.theme) th[x.d.theme] = (th[x.d.theme] || 0) + x.s; }); var theme = Object.keys(th).sort(function (a, b) { return th[b] - th[a]; })[0];
+        var af = [];
+        if (!sb.length) af.push("Écrire le soundbite en tête de la note, dans un encadré (lignes commençant par « > ») : ce que le candidat dirait en une minute, 6 à 8 puces courtes, écrites par vous.");
+        else if (mots > 160) af.push("Raccourcir le soundbite : " + mots + " mots, 160 au plus (une minute à l'oral).");
+        sections.forEach(function (x) { if (!x.ok && x.s !== "Soundbite") af.push("Ajouter la section « " + x.s + " »."); });
+        if (ns.length) af.push("Sourcer " + ns.length + " phrase(s) chiffrée(s) : (auteur ou organisme, année).");
+        if (!ailleurs) af.push("Ajouter un exemple étranger comparable (« Ailleurs ») : un pays qui l'a fait, avec le résultat mesuré, ou une idée venue d'ailleurs qui irait bien à la France.");
+        if (!prog.philippe) af.push("Citer la position d'Édouard Philippe (mesure du livret ou déclaration datée), ou écrire « à vérifier ».");
+        if (props.length) af.push("Doublon possible avec : " + props.slice(0, 2).map(function (x) { return x.d.titre; }).join(" ; ") + ".");
+        return { sb: sb, mots: mots, sections: sections, lit: lit, prog: prog, props: props, ch: ch, ns: ns, ailleurs: ailleurs, theme: theme, af: af };
+      };
+      var lien = function (d) { return d.url && /^https?:\/\//.test(d.url) ? '<a href="' + esc(d.url) + '" target="_blank" rel="noopener">' + esc(d.titre) + "</a>" : esc(d.titre); };
+      var pct = function (s) { return '<span class="mut">' + Math.round(s * 100) + "</span>"; };
+      var rapport = function (v) {
+        var T = (C.themes || []).filter(function (t) { return t.id === v.theme; })[0];
+        return '<h2 class="h2">À faire avant relecture</h2>' + (v.af.length ? '<ol class="lst">' + v.af.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol>" : "<p>Rien de bloquant : la structure, les sources et la comparaison sont en place.</p>") +
+          '<h2 class="h2">Structure</h2><ul class="lst">' + v.sections.map(function (x) { return "<li>" + (x.ok ? "✓ " : "✗ ") + esc(x.s) + "</li>"; }).join("") + "<li>" + (v.ailleurs ? "✓" : "✗") + " Comparaison internationale</li><li>Soundbite : " + (v.sb.length ? v.sb.length + " puces, " + v.mots + " mots" : "absent") + "</li></ul>" +
+          '<h2 class="h2">Chiffres</h2><p>' + v.ch.length + " phrase(s) chiffrée(s), dont " + v.ns.length + " sans source.</p>" + (v.ns.length ? '<ul class="lst">' + v.ns.slice(0, 8).map(function (c) { return "<li>" + esc(c.ph) + "</li>"; }).join("") + "</ul>" : "") +
+          '<h2 class="h2">Face aux programmes</h2>' + (T ? '<p class="mut">Thème le plus proche : <a href="#' + esc(T.id) + '" data-go="' + esc(T.id) + '">' + esc(T.nom) + "</a> (analyse complète au crible).</p>" : "") +
+          '<ul class="lst">' + Object.keys(CAND).map(function (k) { var a = v.prog[k]; return "<li><b>" + esc(CAND[k]) + "</b> : " + (a ? a.map(function (x) { return esc(x.d.titre) + " " + pct(x.s); }).join(" ; ") : '<span class="mut">rien de proche dans le corpus</span>') + "</li>"; }).join("") + "</ul>" +
+          '<h2 class="h2">Ce que dit la littérature</h2><p class="mut">Les sources du corpus les plus proches de votre note. À lire avant de citer : la proximité mesure des mots en commun, pas l\'accord avec votre thèse.</p><ul class="lst">' + v.lit.map(function (x) { return "<li>" + lien(x.d) + (x.d.auteurs ? ' <span class="mut">· ' + esc(String(x.d.auteurs).slice(0, 90)) + (x.d.annee ? ", " + esc(x.d.annee) : "") + "</span>" : "") + " " + pct(x.s) + "</li>"; }).join("") + "</ul>" +
+          (v.props.length ? '<h2 class="h2">Propositions déjà au corpus</h2><ul class="lst">' + v.props.map(function (x) { return "<li>" + esc(x.d.titre) + " " + pct(x.s) + "</li>"; }).join("") + "</ul>" : "");
+      };
+      box.innerHTML = '<div class="thead"><h1>Vérifier une note</h1><p class="lead">Collez votre note : elle est confrontée au corpus (' + (C.sources_index || []).length + " sources : littérature économique, rapports publics, programmes de tous les candidats). Le rapport s'affiche ici, tout de suite. Rien n'est envoyé : la vérification tourne dans votre navigateur.</p></div>" +
+        '<p class="mut">Structure attendue : en tête, le soundbite dans un encadré (lignes « > », 6 à 8 puces, écrit par vous) ; puis « Le constat : ce que proposent les candidats » (Édouard Philippe d\'abord) ; « Nos propositions » (le dire, l\'expliquer, pourquoi, les preuves) ; « À vérifier avant usage » ; « Sources ».</p>' +
+        '<div class="form2"><label>La note (Markdown ou texte)<textarea id="vf-texte" rows="16"></textarea></label></div><p class="filters"><button class="chip" id="vf-go">Vérifier</button> <span class="mut" id="vf-msg"></span></p><div id="vf-rap"></div>';
+      $("#vf-go", box).addEventListener("click", function () {
+        var t = $("#vf-texte", box).value; if (t.trim().length < 200) { $("#vf-msg", box).textContent = "Collez une note d'au moins quelques paragraphes."; return; }
+        $("#vf-msg", box).textContent = "Vérification…";
+        setTimeout(function () { var v = verifier(t); $("#vf-rap", box).innerHTML = rapport(v); $("#vf-msg", box).textContent = ""; }, 20);
+      });
+    })();
+
     // ---------- équipe : le groupe, puis les outils
     (function () {
-      var box = el("membres"), M = (C.equipe && C.equipe.membres) || (C.membres || []).map(function (m) { return { nom: m.nom, specialites: [m.role], photo: m.photo, linkedin: m.linkedin }; }); if (!box || !M.length) return;
-      var ini = function (n) { return n.split(/[\s-]+/).filter(Boolean).map(function (w) { return w[0]; }).join("").slice(0, 2).toUpperCase(); };
-      box.innerHTML = ('<div class="thead"><h1>Le groupe</h1><p class="lead">Préparer l\'avenir : ' + M.length + " membres bénévoles, chacun sur sa spécialité.</p></div>" +
-        '<div class="trombi">' + M.map(function (m) { return '<div class="tm">' + (/^(https:\/\/|data:image\/)/.test(m.photo || "") ? '<img src="' + esc(m.photo) + '" alt="' + esc(m.nom) + '">' : '<span class="av" aria-hidden="true">' + esc(ini(m.nom)) + "</span>") + "<b>" + esc(m.nom) + '</b><span class="tags">' + (m.specialites || []).map(function (s) { return '<span class="badge">' + esc(s) + "</span>"; }).join(" ") + "</span>" + (m.bio ? '<span class="mut">' + esc(m.bio) + "</span>" : "") + (m.linkedin ? '<a href="' + esc(m.linkedin) + '" target="_blank" rel="noopener">LinkedIn</a>' : "") + "</div>"; }).join("") + "</div>" +
-        '<section><h2 class="h2">Travailler avec Claude Code et les skills du groupe</h2><ol class="lst"><li>Installer Claude Code : <code>curl -fsSL https://claude.ai/install.sh | bash</code></li><li>Installer les skills et agents de recherche (revue de littérature, vérification des citations, analyse de politique publique, lecture de PDF…) : téléchargez <a href="https://ajoly35.github.io/assets/research-kit-installer.zsh" target="_blank" rel="noopener">l\'installateur</a>, puis demandez à Claude Code de le lire et de vous dire ce qu\'il ajoute avant de le lancer. Mode d\'emploi : <a href="https://ajoly35.github.io/setup.html" target="_blank" rel="noopener">Research with Claude</a>.</li><li>Pour travailler sur le site et les notes du groupe : clonez le dépôt preparer-lavenir (Équipe › Contribuer) ; ses méthodes propres sont dans <code>.claude/skills/</code>.</li></ol></section>');
+      var box = el("membres"); if (!box) return;
+      box.innerHTML = '<div class="thead"><h1>Travailler avec Claude Code</h1></div>' +
+        '<section><h2 class="h2">Travailler avec Claude Code et les skills du groupe</h2><ol class="lst"><li>Installer Claude Code : <code>curl -fsSL https://claude.ai/install.sh | bash</code></li><li>Installer les skills et agents de recherche (revue de littérature, vérification des citations, analyse de politique publique, lecture de PDF…) : téléchargez <a href="https://ajoly35.github.io/assets/research-kit-installer.zsh" target="_blank" rel="noopener">l\'installateur</a>, puis demandez à Claude Code de le lire et de vous dire ce qu\'il ajoute avant de le lancer. Mode d\'emploi : <a href="https://ajoly35.github.io/setup.html" target="_blank" rel="noopener">Research with Claude</a>.</li><li>Pour travailler sur le site et les notes du groupe : clonez le dépôt preparer-lavenir (Équipe › Contribuer) ; ses méthodes propres sont dans <code>.claude/skills/</code>.</li></ol></section>';
     })();
 
     // ---------- bonnes idées des autres programmes, par thème
