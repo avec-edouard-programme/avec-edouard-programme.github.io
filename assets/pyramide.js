@@ -304,6 +304,9 @@
       TH.forEach(function (th) {
         var X = CB[th.id], pane = $("#p-" + th.id + ' [data-p="synthese"]'), adv = $("#p-" + th.id + ' [data-p="adversaires"]');
         if (!X || !pane) return;
+        // le message à changer, en tête du thème (27/11/2026)
+        var MC = ((C.messages_a_changer || {}).themes || {})[th.id], TP = $("#p-" + th.id);
+        if (MC && TP && !$(".msgchg", TP)) { var hd = $(".thead", TP), bx = '<div class="box msgchg"><p class="kick">Le message à changer</p><p><b>Le message :</b> ' + esc(MC.message) + "</p><p><b>Pourquoi il faut le changer :</b> " + esc(MC.pourquoi) + "</p></div>"; if (hd) hd.insertAdjacentHTML("afterend", bx); else TP.insertAdjacentHTML("afterbegin", bx); }
         var ms = P.mesures.filter(function (m) { return m.theme === th.id; });
         var sol = ms.map(function (m) { var x = PA.mieux(m, P.analyses, C); return x ? '<li><a href="#" data-n="' + m.num + '">N°' + m.num + "</a> " + esc(m.titre.replace(/\.$/, "")) + ' <span class="mieux2">' + esc(x.k) + " : " + inline(x.t) + "</span></li>" : ""; }).join("");
         // somme des positions par candidat, sur tous les sous-thèmes
