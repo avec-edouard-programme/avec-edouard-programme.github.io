@@ -354,9 +354,9 @@
         DOCS = [];
         (C.sources_index || []).forEach(function (d) {
           var p = String(d.chemin || "").split("/"), cat = d.categorie, cand = cat === "programme" && p.length > 4 ? p[3] : "";
-          DOCS.push({ cat: cat, cand: cand, titre: d.titre, auteurs: d.auteurs || d.auteur || "", annee: d.annee || "", url: d.url || "", theme: d.theme, c: cnt(toks((d.titre || "") + " " + (d.resume || "") + " " + String(d.texte || "").slice(0, 6000))) });
+          DOCS.push({ cat: cat, cand: cand, titre: d.titre, auteurs: d.auteurs || d.auteur || "", annee: d.annee || "", url: d.url || "", theme: d.theme, resume: d.resume || "", texte: String(d.texte || "").slice(0, 6000), c: cnt(toks((d.titre || "") + " " + (d.resume || "") + " " + String(d.texte || "").slice(0, 6000))) });
         });
-        Object.keys(C.crible || {}).forEach(function (th) { ((C.crible[th] || {}).soustemes || []).forEach(function (st) { Object.keys(st.candidats || {}).forEach(function (k) { var v = st.candidats[k] || {}; if (!v.proposition || k === "philippe") return; DOCS.push({ cat: "programme", cand: k, titre: st.titre + " : " + v.proposition, auteurs: v.source || "", theme: th, c: cnt(toks(st.titre + " " + v.proposition)) }); }); }); });
+        Object.keys(C.crible || {}).forEach(function (th) { ((C.crible[th] || {}).soustemes || []).forEach(function (st) { Object.keys(st.candidats || {}).forEach(function (k) { var v = st.candidats[k] || {}; if (!v.proposition || k === "philippe") return; DOCS.push({ cat: "programme", cand: k, titre: st.titre, resume: v.proposition, src: v.source || "", eval: v.evaluation || v.verdict || "", theme: th, c: cnt(toks(st.titre + " " + v.proposition)) }); }); }); });
         var df = {}; DOCS.forEach(function (d) { Object.keys(d.c).forEach(function (w) { df[w] = (df[w] || 0) + 1; }); });
         IDF = {}; Object.keys(df).forEach(function (w) { IDF[w] = Math.log(DOCS.length / df[w]); });
         DOCS.forEach(function (d) { var v = {}, n = 0; Object.keys(d.c).forEach(function (w) { v[w] = (1 + Math.log(d.c[w])) * (IDF[w] || 0); n += v[w] * v[w]; }); d.v = v; d.n = Math.sqrt(n) || 1; delete d.c; });
@@ -366,6 +366,11 @@
         Object.keys(c).forEach(function (w) { q[w] = (1 + Math.log(c[w])) * (IDF[w] || 0); nq += q[w] * q[w]; }); nq = Math.sqrt(nq) || 1;
         return DOCS.map(function (d) { var s = 0; for (var w in q) if (d.v[w]) s += q[w] * d.v[w]; return { s: s / (nq * d.n), d: d }; }).sort(function (a, b) { return b.s - a.s; });
       };
+      var vecOf = function (x) { var c = cnt(toks(x)), q = {}, n = 0; Object.keys(c).forEach(function (w) { q[w] = (1 + Math.log(c[w])) * (IDF[w] || 0); n += q[w] * q[w]; }); return { v: q, n: Math.sqrt(n) || 1 }; };
+      var cos = function (a, b) { var s = 0; for (var w in a.v) if (b.v[w]) s += a.v[w] * b.v[w]; return s / (a.n * b.n); };
+      var phrases = function (x) { return String(x || "").replace(/\s+/g, " ").split(/(?<=[.!?;])\s+(?=[A-ZÀ-Ý«"(])/).filter(function (p) { return p.length > 25; }); };
+      var meilleur = function (morceaux, cible) { var b = null, bs = 0; morceaux.forEach(function (m) { var s = cos(m.vv || (m.vv = vecOf(m.t)), cible); if (s > bs) { bs = s; b = m; } }); return b ? { t: b.t, s: bs } : null; };
+      var extrait = function (d, cible) { var ph = phrases(d.texte || d.resume), ms = []; for (var i = 0; i < ph.length; i++) ms.push({ t: ph.slice(i, i + 2).join(" ") }); return meilleur(ms.slice(0, 400), cible); };
       var soundbite = function (md) {
         var m = md.match(/^\s*((?:>.*\n?)+)/);
         if (m && !/pourquoi-cette-note|pourquoi cette note/.test(norm(m[1]))) { var pu = m[1].split("\n").map(function (l) { return l.replace(/^>\s*[-*]?\s*/, "").trim(); }).filter(function (l) { return l && !/^\**soundbite\**\s*:?$/i.test(l); }); if (pu.length && !/à écrire/i.test(pu.join(" "))) return pu; }
@@ -382,39 +387,28 @@
         return out;
       };
       var verifier = function (md) {
-        var txt = md.replace(/^---\n[\s\S]*?\n---\n/, ""), sb = soundbite(txt), mots = sb.join(" ").split(/\s+/).filter(Boolean).length;
-        var titres = (txt.match(/^#{1,3} .+$/gm) || []).map(function (t) { return norm(t).replace(/-/g, " "); });
-        var sections = SECT.map(function (x) { return { s: x[0], ok: titres.some(function (t) { return x[1].test(t); }) || (x[0] === "Soundbite" && sb.length > 0) }; });
-        var r = proches(txt), lit = r.filter(function (x) { return x.d.cat === "litterature" || x.d.cat === "analyse"; }).slice(0, 8);
-        var prog = {}; r.forEach(function (x) { if (x.d.cat === "programme" && CAND[x.d.cand] && x.s >= 0.08) { var a = prog[x.d.cand] = prog[x.d.cand] || []; if (a.length < 2) a.push(x); } });
-        var props = r.filter(function (x) { return x.d.cat === "proposition" && x.s >= 0.25; }).slice(0, 4);
-        var ch = chiffres(txt), ns = ch.filter(function (c) { return !c.ok; });
-        var ailleurs = /ailleurs|allemagne|royaume-uni|italie|espagne|suede|etats-unis|japon|pays-bas|danemark|canada|finlande|portugal|suisse|autriche|belgique|ocde/.test(norm(txt));
-        var th = {}; r.slice(0, 30).forEach(function (x) { if (x.d.theme) th[x.d.theme] = (th[x.d.theme] || 0) + x.s; }); var theme = Object.keys(th).sort(function (a, b) { return th[b] - th[a]; })[0];
-        var af = [];
-        if (!sb.length) af.push("Écrire le soundbite en tête de la note, dans un encadré (lignes commençant par « > ») : ce que le candidat dirait en une minute, 6 à 8 puces courtes, écrites par vous.");
-        else if (mots > 160) af.push("Raccourcir le soundbite : " + mots + " mots, 160 au plus (une minute à l'oral).");
-        sections.forEach(function (x) { if (!x.ok && x.s !== "Soundbite") af.push("Ajouter la section « " + x.s + " »."); });
-        if (ns.length) af.push("Sourcer " + ns.length + " phrase(s) chiffrée(s) : (auteur ou organisme, année).");
-        if (!ailleurs) af.push("Ajouter un exemple étranger comparable (« Ailleurs ») : un pays qui l'a fait, avec le résultat mesuré, ou une idée venue d'ailleurs qui irait bien à la France.");
-        if (!prog.philippe) af.push("Citer la position d'Édouard Philippe (mesure du livret ou déclaration datée), ou écrire « à vérifier ».");
-        if (props.length) af.push("Doublon possible avec : " + props.slice(0, 2).map(function (x) { return x.d.titre; }).join(" ; ") + ".");
-        return { sb: sb, mots: mots, sections: sections, lit: lit, prog: prog, props: props, ch: ch, ns: ns, ailleurs: ailleurs, theme: theme, af: af };
+        var txt = md.replace(/^---\n[\s\S]*?\n---\n/, ""), r = proches(txt);
+        var paras = txt.split(/\n\s*\n/).map(function (p) { return p.replace(/^[#>\s*-]+/gm, "").replace(/\s+/g, " ").trim(); }).filter(function (p) { return p.length > 40; }).map(function (p) { return { t: p }; });
+        var lier = function (x) { var dv = vecOf(x.d.titre + " " + x.d.resume + " " + (x.d.texte || "").slice(0, 3000)); x.note = meilleur(paras, dv); x.src = x.note ? extrait(x.d, vecOf(x.note.t)) : null; return x; };
+        var lit = r.filter(function (x) { return x.d.cat === "litterature" || x.d.cat === "analyse"; }).slice(0, 10).map(lier);
+        var prog = {}; r.forEach(function (x) { if (x.d.cat === "programme" && CAND[x.d.cand] && x.s >= 0.06) { var a = prog[x.d.cand] = prog[x.d.cand] || []; if (a.length < 3) a.push(x); } });
+        Object.keys(prog).forEach(function (k) { prog[k] = prog[k].map(lier); });
+        var th = {}; r.slice(0, 30).forEach(function (x) { if (x.d.theme) th[x.d.theme] = (th[x.d.theme] || 0) + x.s; });
+        return { lit: lit, prog: prog, theme: Object.keys(th).sort(function (a, b) { return th[b] - th[a]; })[0] };
       };
       var lien = function (d) { return d.url && /^https?:\/\//.test(d.url) ? '<a href="' + esc(d.url) + '" target="_blank" rel="noopener">' + esc(d.titre) + "</a>" : esc(d.titre); };
-      var pct = function (s) { return '<span class="mut">' + Math.round(s * 100) + "</span>"; };
+      var pct = function (s) { return '<span class="kick">' + Math.round(s * 100) + " % de proximité</span>"; };
+      var court = function (t, n) { t = String(t || ""); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+      var liens = function (x) { return (x.note ? '<p class="mut"><b>Votre note :</b> « ' + esc(court(x.note.t, 320)) + " »</p>" : "") + (x.src && x.src.s > 0.05 ? '<p class="mut"><b>Passage le plus proche de la source :</b> « ' + esc(court(x.src.t, 420)) + " »</p>" : ""); };
       var rapport = function (v) {
         var T = (C.themes || []).filter(function (t) { return t.id === v.theme; })[0];
-        return '<h2 class="h2">À faire avant relecture</h2>' + (v.af.length ? '<ol class="lst">' + v.af.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol>" : "<p>Rien de bloquant : la structure, les sources et la comparaison sont en place.</p>") +
-          '<h2 class="h2">Structure</h2><ul class="lst">' + v.sections.map(function (x) { return "<li>" + (x.ok ? "✓ " : "✗ ") + esc(x.s) + "</li>"; }).join("") + "<li>" + (v.ailleurs ? "✓" : "✗") + " Comparaison internationale</li><li>Soundbite : " + (v.sb.length ? v.sb.length + " puces, " + v.mots + " mots" : "absent") + "</li></ul>" +
-          '<h2 class="h2">Chiffres</h2><p>' + v.ch.length + " phrase(s) chiffrée(s), dont " + v.ns.length + " sans source.</p>" + (v.ns.length ? '<ul class="lst">' + v.ns.slice(0, 8).map(function (c) { return "<li>" + esc(c.ph) + "</li>"; }).join("") + "</ul>" : "") +
-          '<h2 class="h2">Face aux programmes</h2>' + (T ? '<p class="mut">Thème le plus proche : <a href="#' + esc(T.id) + '" data-go="' + esc(T.id) + '">' + esc(T.nom) + "</a> (analyse complète au crible).</p>" : "") +
-          '<ul class="lst">' + Object.keys(CAND).map(function (k) { var a = v.prog[k]; return "<li><b>" + esc(CAND[k]) + "</b> : " + (a ? a.map(function (x) { return esc(x.d.titre) + " " + pct(x.s); }).join(" ; ") : '<span class="mut">rien de proche dans le corpus</span>') + "</li>"; }).join("") + "</ul>" +
-          '<h2 class="h2">Ce que dit la littérature</h2><p class="mut">Les sources du corpus les plus proches de votre note. À lire avant de citer : la proximité mesure des mots en commun, pas l\'accord avec votre thèse.</p><ul class="lst">' + v.lit.map(function (x) { return "<li>" + lien(x.d) + (x.d.auteurs ? ' <span class="mut">· ' + esc(String(x.d.auteurs).slice(0, 90)) + (x.d.annee ? ", " + esc(x.d.annee) : "") + "</span>" : "") + " " + pct(x.s) + "</li>"; }).join("") + "</ul>" +
-          (v.props.length ? '<h2 class="h2">Propositions déjà au corpus</h2><ul class="lst">' + v.props.map(function (x) { return "<li>" + esc(x.d.titre) + " " + pct(x.s) + "</li>"; }).join("") + "</ul>" : "");
+        return '<h2 class="h2">Face aux programmes</h2>' + (T ? '<p class="mut">Thème le plus proche : <a href="#' + esc(T.id) + '" data-go="' + esc(T.id) + '">' + esc(T.nom) + "</a> (analyse complète au crible).</p>" : "") +
+          Object.keys(CAND).map(function (k) { var a = v.prog[k]; return '<h3 class="h3">' + esc(CAND[k]) + "</h3>" + (a ? a.map(function (x) {
+            return '<details class="in"><summary>' + esc(court(x.d.titre, 140)) + " " + pct(x.s) + "</summary>" + (x.d.resume ? "<p>" + esc(x.d.resume) + "</p>" : "") + (x.d.eval ? '<p class="mut"><b>Notre évaluation :</b> ' + esc(x.d.eval) + "</p>" : "") + liens(x) + ((x.d.src || x.d.auteurs) ? '<p class="mut">' + (x.d.url ? lien({ url: x.d.url, titre: x.d.src || x.d.auteurs }) : esc(x.d.src || x.d.auteurs)) + "</p>" : "") + "</details>"; }).join("") : '<p class="mut">Rien de proche dans le corpus.</p>'); }).join("") +
+          '<h2 class="h2">Ce que dit la littérature</h2><p class="mut">Les sources du corpus les plus proches de votre note, avec leur résumé, le passage de votre note qui s\'en rapproche le plus et le passage correspondant de la source. La proximité mesure des mots en commun, pas l\'accord avec votre thèse : lisez avant de citer.</p>' +
+          v.lit.map(function (x) { return '<details class="in"><summary>' + esc(court(x.d.titre, 150)) + " " + pct(x.s) + "</summary>" + (x.d.auteurs ? '<p class="kick">' + esc(court(x.d.auteurs, 140)) + (x.d.annee ? " · " + esc(x.d.annee) : "") + "</p>" : "") + (x.d.resume ? "<p>" + esc(x.d.resume) + "</p>" : "") + liens(x) + (x.d.url ? '<p><a class="chip" href="' + esc(x.d.url) + '" target="_blank" rel="noopener">Lire la source</a></p>' : "") + "</details>"; }).join("");
       };
       box.innerHTML = '<div class="thead"><h1>Vérifier une note</h1><p class="lead">Collez votre note : elle est confrontée au corpus (' + (C.sources_index || []).length + " sources : littérature économique, rapports publics, programmes de tous les candidats). Le rapport s'affiche ici, tout de suite. Rien n'est envoyé : la vérification tourne dans votre navigateur.</p></div>" +
-        '<p class="mut">Structure attendue : en tête, le soundbite dans un encadré (lignes « > », 6 à 8 puces, écrit par vous) ; puis « Le constat : ce que proposent les candidats » (Édouard Philippe d\'abord) ; « Nos propositions » (le dire, l\'expliquer, pourquoi, les preuves) ; « À vérifier avant usage » ; « Sources ».</p>' +
         '<div class="form2"><label>La note (Markdown ou texte)<textarea id="vf-texte" rows="16"></textarea></label></div><p class="filters"><button class="chip" id="vf-go">Vérifier</button> <span class="mut" id="vf-msg"></span></p><div id="vf-rap"></div>';
       $("#vf-go", box).addEventListener("click", function () {
         var t = $("#vf-texte", box).value; if (t.trim().length < 200) { $("#vf-msg", box).textContent = "Collez une note d'au moins quelques paragraphes."; return; }
